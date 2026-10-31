@@ -613,9 +613,7 @@ function roleHtml(b) {
 }
 
 function carteHtml(b) {
-  const base = imgBrawler(b.id);
-  const src = b.possede && b.prestige > 0 ? imgPrestige(b.id, b.prestige) : base;
-  const img = '<div class="rond"><img src="' + src + '"' + (src !== base ? " data-c='[\"" + base + "\"]'" : "") + ' alt="" loading="lazy" onerror="chaine(this)"></div>';
+  const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
   if (!b.possede) {
     return '<div class="brawler manquant">' + img +
       '<div class="nom">' + esc(b.nom) + '</div>' + roleHtml(b) + '<div class="etat">🔒 Non possédé</div></div>';
@@ -623,8 +621,7 @@ function carteHtml(b) {
   return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
     '<div class="nom">' + esc(b.nom) + "</div>" + roleHtml(b) +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
-    '<div class="info">Record ' + fmt(b.record) + "</div>" +
-    '<div class="info">Rang ' + b.rang + (b.prestige ? " · " + ICONES.prestige + b.prestige : "") + "</div>" +
+    '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
     '<div class="equip">' +
       '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + (b.max.starPowers ? "/" + b.max.starPowers : "") + "</span>" +
       '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + (b.max.gadgets ? "/" + b.max.gadgets : "") + "</span>" +
@@ -698,7 +695,6 @@ function ouvrirDetail(id) {
       '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
       (b.classe ? "<p>Rôle : " + esc(b.classe) + "</p>" : "") +
       '<p>Couleur de rareté : <b style="color:' + esc(b.rarete.couleur) + '">' + esc(b.rarete.couleur) + "</b></p>" +
-      (b.prestige > 0 ? '<img class="prestige-img" src="' + imgPrestige(b.id, b.prestige) + '" alt="" style="max-width:130px" onerror="chaine(this)">' : "") +
       (b.description ? "<p>" + esc(b.description) + "</p>" : "") +
     "</div>" +
     // milieu
