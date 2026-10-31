@@ -213,6 +213,10 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .brawler .role { font-size: .62rem; color: var(--discret); line-height: 1.1; margin-bottom: 2px; }
 .ico { height: 1.15em; width: auto; vertical-align: middle; }
 .prestige-img { display: block; margin-top: 12px; border-radius: 12px; }
+.ligne2 { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--carte2); font-size: .9rem; }
+.ligne2 .mini { width: 36px; height: 36px; object-fit: contain; flex-shrink: 0; }
+.ligne2 .mini-e { font-size: 1.6rem; width: 36px; text-align: center; flex-shrink: 0; }
+.ligne2 .type-b { margin-left: auto; color: var(--discret); font-size: .7rem; text-align: right; }
   </style>
 </head>
 <body>
@@ -678,6 +682,59 @@ function skinsHtml(b) {
     '<p class="note">Ni Brawlify ni l\'API officielle ne fournissent les skins : ajoute ceux que tu veux suivre, touche-les pour marquer ceux que tu possèdes (enregistré dans ce navigateur).</p>';
 }
 
+/* ---------- Hypercharge et buffies (lecture souple des données de l'API) ---------- */
+function entrees(x) {
+  if (!x) return [];
+  if (Array.isArray(x)) return x.map(i => (i && typeof i === "object") ? i : { name: String(i) });
+  if (typeof x === "object") {
+    if (x.name || x.id != null) return [x];
+    return Object.keys(x).filter(k => x[k]).map(k => {
+      const v = x[k];
+      return (v && typeof v === "object") ? Object.assign({ type: k }, v) : { type: k };
+    });
+  }
+  return [];
+}
+
+function miniImg(urls, emoji) {
+  if (!urls.length) return '<span class="mini-e">' + emoji + "</span>";
+  return '<img class="mini" src="' + urls[0] + '"' +
+    (urls.length > 1 ? " data-c='" + JSON.stringify(urls.slice(1)) + "'" : "") +
+    ' data-e="' + emoji + '" alt="" onerror="chaine(this)">';
+}
+
+function buffiesHtml(b) {
+  if (!b.brut) return "";
+  const c = b.catalogue;
+  const hy = entrees(b.brut.hyperCharges || b.brut.hypercharges || b.brut.hyperCharge);
+  const bf = entrees(b.brut.buffies || b.brut.buffs);
+  if (!hy.length && !bf.length) return "";
+  let html = "<h3>Hypercharge et buffies</h3>";
+
+  hy.forEach(e => {
+    const nom = e.name || "Hypercharge";
+    html += '<div class="ligne2">' + miniImg(IMG_HYPERCHARGE ? [IMG_HYPERCHARGE] : [], "🔥") +
+      "<span>" + esc(nom) + '</span><span class="type-b">Hypercharge</span></div>';
+  });
+
+  bf.forEach(e => {
+    const g = e.id != null ? c.gadgets.find(x => x.id == e.id) : null;
+    const s = e.id != null ? c.starPowers.find(x => x.id == e.id) : null;
+    const texte = String(e.type || e.kind || e.category || "").toLowerCase();
+    let type = g ? "gadget" : s ? "starPower" : texte.includes("gadget") ? "gadget" : texte.includes("star") ? "starPower" : texte.includes("hyper") ? "hyper" : "";
+    const libelles = { gadget: "Buffie gadget", starPower: "Buffie pouvoir stellaire", hyper: "Buffie hypercharge", "": "Buffie" };
+    const emojis = { gadget: ICONES.buffieGadget, starPower: ICONES.buffieStarPower, hyper: ICONES.buffieHyperCharge, "": "✨" };
+    let urls = [];
+    if (type === "gadget" && e.id != null) urls = [imgGadget(e.id), imgGadgetBord(e.id)];
+    if (type === "starPower" && e.id != null) urls = [imgStar(e.id), imgStarBord(e.id)];
+    if (type === "hyper" && IMG_HYPERCHARGE) urls = [IMG_HYPERCHARGE];
+    const nom = e.name || (g && g.name) || (s && s.name) || libelles[type];
+    html += '<div class="ligne2">' + miniImg(urls, emojis[type]) +
+      "<span>" + esc(nom) + '</span><span class="type-b">' + libelles[type] + "</span></div>";
+  });
+  return html;
+}
+
 function ouvrirDetail(id) {
   const b = tous.find(x => x.id == id);
   if (!b) return;
@@ -705,18 +762,18 @@ function ouvrirDetail(id) {
     // droite
     '<div class="col-droite">' +
       "<h3>Caractéristiques</h3>" +
+      '<div class="ligne"><span>Rareté</span><b style="color:' + esc(b.rarete.couleur) + '">' + esc(b.rarete.nom) + "</b></div>" +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
           '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
-          '<div class="ligne"><span>Rang</span><b>' + b.rang + "</b></div>" +
           '<div class="ligne"><span>' + ICONES.prestige + ' Prestige actuel</span><b>' + (b.prestige || "—") + "</b></div>"
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
-      '<div class="ligne"><span>Dégâts</span><b>à venir</b></div>' +
       '<div class="ligne"><span>' + ICONES.hypercharge + " Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : "") + "</span><b>" + (b.hyper ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieGadget + " Buffie gadget</span><b>" + (buf.gadget ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieStarPower + " Buffie pouvoir stellaire</span><b>" + (buf.starPower ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieHyperCharge + " Buffie hypercharge</span><b>" + (buf.hyperCharge ? "Oui" : "Non") + "</b></div>" +
+      buffiesHtml(b) +
       "<h3>🔧 Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
         objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, ICONES.gadget, "Aucun gadget") +
       "<h3>⭐ Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
