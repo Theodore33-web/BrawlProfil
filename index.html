@@ -23,7 +23,7 @@ body {
   color: var(--texte);
   font-family: "Trebuchet MS", system-ui, sans-serif;
 }
-main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+main { max-width: 1000px; margin: 0 auto; padding: 12px; }
 h2 { margin: 0; font-size: 1.3rem; }
 .cache { display: none !important; }
 .carte {
@@ -36,6 +36,30 @@ h2 { margin: 0; font-size: 1.3rem; }
 }
 .chargement, .erreur { text-align: center; color: var(--discret); }
 .erreur { color: var(--rouge); }
+.note { color: var(--discret); font-size: .8rem; }
+
+/* ---------- Bannière ---------- */
+.banniere {
+  background: linear-gradient(135deg, #2a1566, #12285a 60%, #0b3a4a);
+  border-radius: 16px; padding: 8px 8px 10px; margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, .1); box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+.banniere-titre {
+  text-align: center; font-weight: bold; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--jaune); font-size: .9rem; padding: 2px 0 6px; text-shadow: 0 2px 4px rgba(0,0,0,.6);
+}
+.banniere-grille { display: grid; grid-template-columns: repeat(15, 1fr); gap: 2px; }
+.banniere-grille img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
+.banniere-grille img.possede { cursor: pointer; }
+.banniere-grille img.absent { filter: grayscale(1); opacity: .3; }
+
+/* ---------- Onglets ---------- */
+.onglets { display: flex; gap: 8px; margin-bottom: 12px; }
+.onglets button {
+  flex: 1; background: var(--carte); color: var(--texte); border: 1px solid rgba(255,255,255,.08);
+  padding: 10px; border-radius: 12px; font: inherit; font-weight: bold; cursor: pointer;
+}
+.onglets button.actif { background: var(--jaune); color: #222; border-color: var(--jaune); }
 
 /* ---------- Profil ---------- */
 .profil { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
@@ -56,10 +80,6 @@ h2 { margin: 0; font-size: 1.3rem; }
 .stat { background: var(--carte); border-radius: 10px; padding: 6px 8px; text-align: center; border: 1px solid rgba(255, 255, 255, .06); }
 .stat b { display: block; font-size: 1.05rem; color: var(--jaune); white-space: nowrap; }
 .stat span { color: var(--discret); font-size: .68rem; line-height: 1.1; display: block; }
-.skin { cursor: pointer; opacity: .35; filter: grayscale(.8); border: 1px solid transparent; }
-.skin.poss { opacity: 1; filter: none; border-color: var(--jaune); }
-.skin.fixe { cursor: default; }
-.skin .pas-img { height: 70px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
 
 /* ---------- Liste ---------- */
 .entete-brawlers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -89,7 +109,7 @@ h2 { margin: 0; font-size: 1.3rem; }
 .brawler:hover { transform: translateY(-3px); }
 .rond {
   width: 100px; height: 100px; margin: 0 auto; border-radius: 12px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--couleur) 60%, #000 0%), color-mix(in srgb, var(--couleur) 25%, var(--carte)));
+  background: linear-gradient(160deg, var(--couleur), color-mix(in srgb, var(--couleur) 25%, var(--carte)));
   border: 2px solid color-mix(in srgb, var(--couleur) 70%, #fff 20%);
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
@@ -113,7 +133,22 @@ h2 { margin: 0; font-size: 1.3rem; }
   display: flex; justify-content: center; gap: 8px; margin-top: 6px;
   font-size: .8rem; background: rgba(0, 0, 0, .22); border-radius: 8px; padding: 3px 6px;
 }
-.modele { height: 340px !important; }
+
+/* ---------- Catalogue ---------- */
+.grille-cat { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tuile-cat {
+  background: var(--carte2); border-radius: 14px; overflow: hidden; cursor: pointer;
+  border-bottom: 4px solid var(--couleur); text-align: center; transition: transform .15s;
+}
+.tuile-cat:hover { transform: translateY(-3px); }
+.tuile-cat .vitrine {
+  height: 150px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--couleur) 55%, var(--carte)), var(--carte2));
+}
+.tuile-cat .vitrine img { max-width: 90%; max-height: 90%; object-fit: contain; }
+.tuile-cat.absent .vitrine img { filter: grayscale(1) brightness(.6); }
+.tuile-cat .nom { font-weight: bold; padding: 6px 4px 0; font-size: .95rem; }
+.tuile-cat .sous { color: var(--discret); font-size: .75rem; padding: 2px 4px 8px; }
 
 /* ---------- Détail ---------- */
 .retour {
@@ -129,26 +164,54 @@ h2 { margin: 0; font-size: 1.3rem; }
 }
 .col-gauche p { color: var(--discret); font-size: .9rem; }
 .modele {
-  height: 300px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  height: 340px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--couleur) 45%, var(--carte)), var(--carte2));
 }
-.modele img { max-height: 85%; max-width: 85%; object-fit: contain; }
+.modele img { max-height: 90%; max-width: 90%; object-fit: contain; }
 .skins h3, .col-droite h3 { margin: 16px 0 8px; font-size: 1.05rem; }
-.liste-skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
-.skin { background: var(--carte2); border-radius: 12px; padding: 6px; text-align: center; font-size: .7rem; }
-.skin img { width: 100%; height: 70px; object-fit: contain; border-radius: 10px; }
-.note { color: var(--discret); font-size: .8rem; }
+.liste-skins { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.skin-puce {
+  display: flex; align-items: center; gap: 6px; background: var(--carte2); border-radius: 10px;
+  padding: 6px 10px; font-size: .85rem; opacity: .45; border: 1px solid transparent; cursor: pointer;
+}
+.skin-puce.poss { opacity: 1; border-color: var(--jaune); }
+.skin-puce .x { color: var(--rouge); font-weight: bold; padding-left: 4px; }
+.ajout-skin { display: flex; gap: 6px; }
+.ajout-skin input {
+  flex: 1; min-width: 0; background: var(--carte2); color: var(--texte); border: 0;
+  padding: 8px 10px; border-radius: 10px; font: inherit;
+}
+.ajout-skin button {
+  background: var(--jaune); color: #222; border: 0; border-radius: 10px; padding: 8px 12px;
+  font: inherit; font-weight: bold; cursor: pointer;
+}
 .ligne { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--carte2); font-size: .92rem; }
 .ligne b { color: var(--jaune); }
 .vide { color: var(--discret); font-style: italic; font-size: .9rem; }
+.objets { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.objet { text-align: center; font-size: .68rem; line-height: 1.1; opacity: .3; filter: grayscale(.9); }
+.objet.poss { opacity: 1; filter: none; }
+.objet img { width: 52px; height: 52px; object-fit: contain; display: block; margin: 0 auto 3px; }
+.objet .pas-img { font-size: 1.8rem; height: 52px; display: flex; align-items: center; justify-content: center; }
 details { margin-top: 14px; font-size: .75rem; color: var(--discret); }
 pre { white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
   <main>
-    <!-- ===== VUE LISTE ===== -->
-    <div id="vue-liste">
+    <!-- ===== BANNIÈRE (15 emojis par ligne) ===== -->
+    <section class="banniere">
+      <div class="banniere-titre" id="banniere-titre">Brawl Stars</div>
+      <div class="banniere-grille" id="banniere"></div>
+    </section>
+
+    <nav class="onglets" id="onglets">
+      <button data-onglet="profil" class="actif">👤 Profil</button>
+      <button data-onglet="catalogue">📚 Catalogue</button>
+    </nav>
+
+    <!-- ===== VUE PROFIL ===== -->
+    <div id="vue-profil">
       <section id="profil" class="carte profil">
         <p class="chargement">Chargement du profil…</p>
       </section>
@@ -165,7 +228,17 @@ pre { white-space: pre-wrap; word-break: break-all; }
           <button data-filtre="possedes">Possédés</button>
           <button data-filtre="manquants">Manquants</button>
         </div>
+        <p class="note cache" id="info-rarete"></p>
         <div id="groupes"></div>
+      </section>
+    </div>
+
+    <!-- ===== VUE CATALOGUE ===== -->
+    <div id="vue-catalogue" class="cache">
+      <section class="carte">
+        <h2>Catalogue <span id="compteur-cat" style="color:var(--jaune)"></span></h2>
+        <p class="note">Tous les brawlers du jeu avec leur modèle. Touche un brawler pour voir ses gadgets, pouvoirs stellaires, équipements et skins.</p>
+        <div id="catalogue"></div>
       </section>
     </div>
 
@@ -178,8 +251,9 @@ pre { white-space: pre-wrap; word-break: break-all; }
   <script>
 const URL_GOOGLE = "https://script.google.com/macros/s/AKfycbzo32S-q5NS_qMPuH9daIQmMiC6APMZfnvUcq7PhEfoh0gNgup3iyqKYtNfEu5Dn6IVCw/exec";
 const URL_BRAWLIFY = "https://api.brawlify.com/v1/brawlers";
+const CDN = "https://cdn.brawlify.com/";
 
-// Emojis provisoires : remplace chaque valeur par une balise <img> plus tard
+// Emojis provisoires (utilisés quand une image n'existe pas, ex. hypercharge)
 const ICONES = {
   hypercharge: "🔥",
   buffieGadget: "🟩",
@@ -201,27 +275,53 @@ const RARETES = [
   { cle: "ultra", nom: "Ultra légendaire", couleur: "#ff5fd2" },
 ];
 const INCONNUE = { cle: "inconnue", nom: "Rareté inconnue", couleur: "#6b7280" };
+const RARETE_PAR_ID = { 1: "depart", 2: "rare", 3: "superrare", 4: "epique", 5: "mythique", 6: "legendaire", 7: "ultra" };
 
 const fmt = n => Number(n || 0).toLocaleString("fr-FR");
-const imgBrawler = id => "https://cdn.brawlify.com/brawlers/borderless/" + id + ".png";
-const imgModele = id => "https://cdn.brawlify.com/brawlers/model/" + id + ".png";
-const imgIcone = id => "https://cdn.brawlify.com/profile-icons/regular/" + id + ".png";
+const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Images Brawlify
+const imgBrawler = id => CDN + "brawlers/borderless/" + id + ".png";
+const imgEmoji = id => CDN + "brawlers/emoji/" + id + ".png";
+const imgModele = id => CDN + "brawlers/model/" + id + ".png";
+const imgIcone = id => CDN + "profile-icons/regular/" + id + ".png";
+const imgGadget = id => CDN + "gadgets/borderless/" + id + ".png";
+const imgGadgetBord = id => CDN + "gadgets/regular/" + id + ".png";
+const imgStar = id => CDN + "star-powers/borderless/" + id + ".png";
+const imgStarBord = id => CDN + "star-powers/regular/" + id + ".png";
+const imgGear = id => CDN + "gears/regular/" + id + ".png";
+
+// onerror : essaie une image de secours, sinon affiche l'emoji
+function repli(el, secours, emoji) {
+  if (secours && !el.dataset.r) { el.dataset.r = "1"; el.src = secours; return; }
+  const d = document.createElement("div");
+  d.className = "pas-img";
+  d.textContent = emoji || "❔";
+  el.replaceWith(d);
+}
+window.repli = repli;
 
 let tous = [];
 let filtre = "tous";
 let totaux = { starPowers: 0, gadgets: 0, gears: 0 };
+let ongletCourant = "profil";
+let ongletPrecedent = "profil";
 
-/* Skins cochés à la main (l'API officielle ne les donne pas), sauvegardés dans ce navigateur */
-function lireSkinsCoches() {
-  try { return JSON.parse(localStorage.getItem("skinsPossedes") || "{}"); } catch (e) { return {}; }
+/* ---------- Skins (saisis à la main : aucune API ne les fournit) ---------- */
+function lireSkins() {
+  try { return JSON.parse(localStorage.getItem("skinsManuels") || "{}"); } catch (e) { return {}; }
 }
-function sauverSkinsCoches(o) {
-  try { localStorage.setItem("skinsPossedes", JSON.stringify(o)); } catch (e) {}
+function sauverSkins(o) {
+  try { localStorage.setItem("skinsManuels", JSON.stringify(o)); } catch (e) {}
 }
 
-function trouverRarete(nomAnglais) {
+/* ---------- Rareté ---------- */
+function trouverRarete(nomAnglais, id) {
   const n = String(nomAnglais || "").toLowerCase();
-  if (!n) return INCONNUE;
+  if (!n) {
+    const cle = RARETE_PAR_ID[id];
+    return cle ? RARETES.find(r => r.cle === cle) : INCONNUE;
+  }
   let cle = "depart";
   if (n.includes("ultra")) cle = "ultra";
   else if (n.includes("legend")) cle = "legendaire";
@@ -235,12 +335,25 @@ function trouverRarete(nomAnglais) {
 async function chargerBrawlify() {
   try {
     const r = await fetch(URL_BRAWLIFY);
+    if (!r.ok) throw new Error("HTTP " + r.status);
     const d = await r.json();
+    const liste = d.list || d.items || (Array.isArray(d) ? d : []);
+    if (!liste.length) throw new Error("réponse vide");
     const map = {};
-    (d.list || d.items || d || []).forEach(b => { map[b.id] = b; });
-    return map;
+    liste.forEach(b => {
+      map[b.id] = {
+        rarity: b.rarity, class: b.class, description: b.description,
+        starPowers: b.starPowers, gadgets: b.gadgets,
+      };
+    });
+    try { localStorage.setItem("brawlifyCache", JSON.stringify(map)); } catch (e) {}
+    return { map, source: "direct" };
   } catch (e) {
-    return {};
+    try {
+      const c = JSON.parse(localStorage.getItem("brawlifyCache") || "null");
+      if (c) return { map: c, source: "cache", erreur: e.message };
+    } catch (x) {}
+    return { map: {}, source: "aucune", erreur: e.message };
   }
 }
 
@@ -250,12 +363,26 @@ async function charger() {
     const d = await r.json();
     if (d.erreur) throw new Error(d.erreur);
     afficherProfil(d.player);
-    fusionner(d.player, d.brawlers.items || [], extra);
+    fusionner(d.player, d.brawlers.items || [], extra.map);
     afficherStats(d.player);
     afficherGroupes();
+    afficherBanniere();
+    afficherCatalogue();
+    infoRarete(extra);
   } catch (e) {
-    document.getElementById("profil").innerHTML = '<p class="erreur">' + e.message + "</p>";
+    document.getElementById("profil").innerHTML = '<p class="erreur">' + esc(e.message) + "</p>";
   }
+}
+
+function infoRarete(extra) {
+  const el = document.getElementById("info-rarete");
+  const inconnus = tous.filter(b => b.rarete.cle === "inconnue").length;
+  let msg = "";
+  if (extra.source === "cache") msg = "Brawlify injoignable (" + extra.erreur + ") : rareté lue depuis la dernière sauvegarde.";
+  else if (extra.source === "aucune") msg = "Rareté indisponible : Brawlify injoignable (" + extra.erreur + "). Les brawlers sont classés « Rareté inconnue ».";
+  else if (inconnus) msg = inconnus + " brawler(s) absent(s) de Brawlify : rareté inconnue.";
+  el.textContent = msg;
+  el.classList.toggle("cache", !msg);
 }
 
 /* ---------- Lecture des données équipements ---------- */
@@ -285,16 +412,22 @@ function lireBuffies(b) {
 function fusionner(joueur, jeu, extra) {
   const possedes = {};
   (joueur.brawlers || []).forEach(b => { possedes[b.id] = b; });
+  const choisir = (a, b) => (a && a.length ? a : (b || []));
   tous = jeu.map(b => {
     const p = possedes[b.id];
     const e = extra[b.id] || {};
+    const cat = {
+      gadgets: choisir(b.gadgets, e.gadgets),
+      starPowers: choisir(b.starPowers, e.starPowers),
+      gears: b.gears || [],
+      hyper: b.hyperCharges || b.hypercharges || [],
+    };
     return {
       id: b.id,
       nom: b.name,
-      rarete: trouverRarete(e.rarity && e.rarity.name),
-      classe: e.class && e.class.name ? e.class.name : "",
+      rarete: trouverRarete(e.rarity && e.rarity.name, e.rarity && e.rarity.id),
+      classe: e.class && e.class.name && e.class.name !== "Unknown" ? e.class.name : "",
       description: e.description || "",
-      skins: e.skins || [],
       possede: !!p,
       puissance: p ? p.power : 0,
       trophees: p ? p.trophies : 0,
@@ -306,14 +439,8 @@ function fusionner(joueur, jeu, extra) {
       hyper: p ? aHypercharge(p) : false,
       buffies: p ? lireBuffies(p) : { gadget: false, starPower: false, hyperCharge: false },
       brut: p || null,
-      // nombre maximum possible pour ce brawler (liste complète du jeu)
-      max: {
-        starPowers: Math.max((b.starPowers || []).length, (e.starPowers || []).length),
-        gadgets: Math.max((b.gadgets || []).length, (e.gadgets || []).length),
-        gears: (b.gears || []).length,
-      },
-      // skins que l'API indique comme possédés (si elle les fournit), sinon null
-      skinsApi: p && Array.isArray(p.skins) ? p.skins.map(s => String(s && (s.id || s.name) || s)) : null,
+      catalogue: cat,
+      max: { starPowers: cat.starPowers.length, gadgets: cat.gadgets.length, gears: cat.gears.length },
     };
   });
   totaux = {
@@ -323,18 +450,32 @@ function fusionner(joueur, jeu, extra) {
   };
   const n = tous.filter(b => b.possede).length;
   document.getElementById("compteur").textContent = n + " / " + tous.length;
+  document.getElementById("compteur-cat").textContent = n + " / " + tous.length;
   document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
+}
+
+/* ---------- Bannière : 15 emojis par ligne ---------- */
+function afficherBanniere() {
+  const ordre = RARETES.concat([INCONNUE]);
+  const rang = b => ordre.findIndex(r => r.cle === b.rarete.cle);
+  const liste = tous.slice().sort((a, b) => rang(a) - rang(b) || a.nom.localeCompare(b.nom));
+  document.getElementById("banniere").innerHTML = liste.map(b =>
+    '<img src="' + imgEmoji(b.id) + '" alt="' + esc(b.nom) + '" title="' + esc(b.nom) + '" loading="lazy"' +
+    ' class="' + (b.possede ? "possede" : "absent") + '" data-id="' + b.id + '"' +
+    ' onerror="this.style.visibility=\'hidden\'">'
+  ).join("");
 }
 
 /* ---------- Profil + stats ---------- */
 function afficherProfil(j) {
   const icone = j.icon ? imgIcone(j.icon.id) : "";
   const club = j.club && j.club.name ? j.club.name : "Aucun club";
+  document.getElementById("banniere-titre").textContent = j.name + " · " + j.tag;
   document.getElementById("profil").innerHTML =
     '<img class="avatar" src="' + icone + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
-    "<div><h1>" + j.name + '</h1><p class="tag">' + j.tag + "</p>" +
-    '<span class="pastille niveau">Niveau ' + j.expLevel + "</span>" +
-    '<span class="pastille">🛡️ ' + club + "</span></div>";
+    "<div><h1>" + esc(j.name) + '</h1><p class="tag">' + esc(j.tag) + "</p>" +
+    '<span class="pastille niveau">Niveau ' + esc(j.expLevel) + "</span>" +
+    '<span class="pastille">🛡️ ' + esc(club) + "</span></div>";
 }
 
 function afficherStats(j) {
@@ -399,10 +540,10 @@ function carteHtml(b) {
   const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
   if (!b.possede) {
     return '<div class="brawler manquant">' + img +
-      '<div class="nom">' + b.nom + '</div><div class="etat">🔒 Non possédé</div></div>';
+      '<div class="nom">' + esc(b.nom) + '</div><div class="etat">🔒 Non possédé</div></div>';
   }
   return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
-    '<div class="nom">' + b.nom + "</div>" +
+    '<div class="nom">' + esc(b.nom) + "</div>" +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
     '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
     '<div class="equip">' +
@@ -412,99 +553,163 @@ function carteHtml(b) {
     badgesHtml(b) + "</div>";
 }
 
+/* ---------- Catalogue ---------- */
+function afficherCatalogue() {
+  const skins = lireSkins();
+  const ordre = RARETES.concat([INCONNUE]);
+  let html = "";
+  ordre.forEach(r => {
+    const liste = tous.filter(b => b.rarete.cle === r.cle).sort((a, b) => a.nom.localeCompare(b.nom));
+    if (!liste.length) return;
+    html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
+      '<div class="bandeau-rarete"><span>' + r.nom + "</span><span>" + liste.length + "</span></div>" +
+      '<div class="grille-cat">' + liste.map(b => {
+        const sk = skins[b.id] || [];
+        const nbP = sk.filter(s => s.p).length;
+        const sous = sk.length ? "🎭 " + nbP + " / " + sk.length + " skin" + (sk.length > 1 ? "s" : "") : (b.possede ? "Possédé" : "Non possédé");
+        return '<div class="tuile-cat' + (b.possede ? "" : " absent") + '" data-id="' + b.id + '">' +
+          '<div class="vitrine"><img src="' + imgModele(b.id) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
+          '<div class="nom">' + esc(b.nom) + '</div><div class="sous">' + sous + "</div></div>";
+      }).join("") + "</div></div>";
+  });
+  document.getElementById("catalogue").innerHTML = html;
+}
+
 /* ---------- Vue détail ---------- */
+function objetsHtml(liste, possedes, urlImg, urlSecours, emoji, vide) {
+  if (!liste.length) return '<p class="vide">' + vide + "</p>";
+  const ids = new Set(possedes.map(x => x.id));
+  return '<div class="objets">' + liste.map(x =>
+    '<div class="objet' + (ids.has(x.id) ? " poss" : "") + '" title="' + esc(x.name) + '">' +
+    '<img src="' + urlImg(x.id) + '" alt="" loading="lazy" onerror="repli(this,' +
+    (urlSecours ? "'" + urlSecours(x.id) + "'" : "null") + ",'" + emoji + '\')">' +
+    esc(x.name) + "</div>"
+  ).join("") + "</div>";
+}
+
+function skinsHtml(b) {
+  const sk = (lireSkins()[b.id] || []);
+  const puces = sk.length
+    ? sk.map((s, i) =>
+        '<div class="skin-puce' + (s.p ? " poss" : "") + '" data-i="' + i + '">🎭 ' + esc(s.n) +
+        '<span class="x" data-suppr="' + i + '" title="Supprimer">✕</span></div>'
+      ).join("")
+    : '<p class="vide">Aucun skin saisi pour ce brawler.</p>';
+  return '<h3>Skins <span style="color:var(--jaune)">' + sk.filter(s => s.p).length + " / " + sk.length + "</span></h3>" +
+    '<div class="liste-skins" id="liste-skins">' + puces + "</div>" +
+    '<div class="ajout-skin"><input id="nom-skin" type="text" maxlength="40" placeholder="Nom du skin à ajouter">' +
+    '<button id="btn-skin">Ajouter</button></div>' +
+    '<p class="note">Ni Brawlify ni l\'API officielle ne fournissent les skins : ajoute ceux que tu veux suivre, touche-les pour marquer ceux que tu possèdes (enregistré dans ce navigateur).</p>';
+}
+
 function ouvrirDetail(id) {
   const b = tous.find(x => x.id == id);
   if (!b) return;
-  const noms = l => l.length
-    ? l.map(x => '<div class="ligne"><span>' + (x.name || x.id) + "</span></div>").join("")
-    : '<p class="vide">Aucun</p>';
-  const coches = lireSkinsCoches();
-  const cleSkin = s => String(s.id || s.name);
-  const possedeSkin = s => b.skinsApi ? b.skinsApi.includes(cleSkin(s)) : !!coches[b.id + ":" + cleSkin(s)];
-  const nbSkins = b.skins.filter(possedeSkin).length;
-  const skins = b.skins.length
-    ? b.skins.map(s => {
-        const src = s.imageUrl || s.imageUrl2 || s.image || "";
-        const vignette = src
-          ? '<img src="' + src + '" alt="" onerror="this.outerHTML=\'<div class=pas-img>🎭</div>\'">'
-          : '<div class="pas-img">🎭</div>';
-        return '<div class="skin' + (possedeSkin(s) ? " poss" : "") + (b.skinsApi ? " fixe" : "") +
-          '" data-skin="' + cleSkin(s) + '">' + vignette + (s.name || "") + "</div>";
-      }).join("")
-    : '<p class="vide">Aucun skin trouvé pour ce brawler</p>';
-  const noteSkins = b.skinsApi
-    ? ""
-    : '<p class="note">L\'API officielle ne dit pas quels skins tu possèdes : touche un skin pour le marquer comme possédé (enregistré dans ce navigateur).</p>';
+  ongletPrecedent = ongletCourant;
   const buf = b.buffies;
+  const c = b.catalogue;
+  const hyperNom = c.hyper.length ? c.hyper.map(h => esc(h.name || h.id)).join(", ") : "";
 
   document.getElementById("detail").style.setProperty("--couleur", b.rarete.couleur);
   document.getElementById("detail").innerHTML =
     // gauche
     '<div class="col-gauche">' +
       '<button class="retour" id="btn-retour" title="Retour">←</button>' +
-      "<h1>" + b.nom + "</h1>" +
+      "<h1>" + esc(b.nom) + "</h1>" +
       '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
-      (b.classe ? "<p>Classe : " + b.classe + "</p>" : "") +
-      (b.description ? "<p>" + b.description + "</p>" : "") +
+      (b.classe ? "<p>Classe : " + esc(b.classe) + "</p>" : "") +
+      (b.description ? "<p>" + esc(b.description) + "</p>" : "") +
     "</div>" +
     // milieu
     '<div class="col-milieu">' +
       '<div class="modele" id="modele"><img src="' + imgModele(b.id) + '" alt="" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
-      '<div class="skins"><h3>Skins possédés <span id="nb-skins">' + nbSkins + " / " + b.skins.length + "</span></h3>" +
-      '<div class="liste-skins" id="liste-skins" data-brawler="' + b.id + '">' + skins + "</div>" + noteSkins + "</div>" +
+      '<div class="skins" data-brawler="' + b.id + '">' + skinsHtml(b) + "</div>" +
     "</div>" +
     // droite
     '<div class="col-droite">' +
       "<h3>Caractéristiques</h3>" +
-      '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
-      '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
-      '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
-      '<div class="ligne"><span>Rang</span><b>' + b.rang + "</b></div>" +
+      (b.possede
+        ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
+          '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
+          '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
+          '<div class="ligne"><span>Rang</span><b>' + b.rang + "</b></div>"
+        : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
       '<div class="ligne"><span>Dégâts</span><b>à venir</b></div>' +
-      '<div class="ligne"><span>' + ICONES.hypercharge + " Hypercharge</span><b>" + (b.hyper ? "Oui" : "Non") + "</b></div>" +
+      '<div class="ligne"><span>' + ICONES.hypercharge + " Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : "") + "</span><b>" + (b.hyper ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieGadget + " Buffie gadget</span><b>" + (buf.gadget ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieStarPower + " Buffie pouvoir stellaire</span><b>" + (buf.starPower ? "Oui" : "Non") + "</b></div>" +
       '<div class="ligne"><span>' + ICONES.buffieHyperCharge + " Buffie hypercharge</span><b>" + (buf.hyperCharge ? "Oui" : "Non") + "</b></div>" +
-      "<h3>🔧 Gadgets</h3>" + noms(b.gadgets) +
-      "<h3>⭐ Pouvoirs stellaires</h3>" + noms(b.starPowers) +
-      "<h3>⚙️ Équipements</h3>" + noms(b.gears) +
-      "<details><summary>Données brutes de l'API</summary><pre>" + JSON.stringify(b.brut, null, 1) + "</pre></details>" +
+      "<h3>🔧 Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
+        objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, ICONES.gadget, "Aucun gadget") +
+      "<h3>⭐ Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
+        objetsHtml(c.starPowers, b.starPowers, imgStar, imgStarBord, ICONES.starPower, "Aucun pouvoir stellaire") +
+      "<h3>⚙️ Équipements " + b.gears.length + (b.max.gears ? " / " + b.max.gears : "") + "</h3>" +
+        objetsHtml(c.gears, b.gears, imgGear, null, ICONES.gear, "Aucun équipement") +
+      "<details><summary>Données brutes de l'API</summary><pre>" + esc(JSON.stringify(b.brut, null, 1)) + "</pre></details>" +
     "</div>";
 
-  document.getElementById("btn-retour").addEventListener("click", fermerDetail);
-  document.getElementById("vue-liste").classList.add("cache");
-  document.getElementById("vue-detail").classList.remove("cache");
+  montrer("detail");
   window.scrollTo(0, 0);
 }
 
-function fermerDetail() {
-  document.getElementById("vue-detail").classList.add("cache");
-  document.getElementById("vue-liste").classList.remove("cache");
+/* ---------- Navigation ---------- */
+function montrer(vue) {
+  ["profil", "catalogue", "detail"].forEach(v =>
+    document.getElementById("vue-" + v).classList.toggle("cache", v !== vue));
+  if (vue !== "detail") ongletCourant = vue;
+  document.querySelectorAll("#onglets button").forEach(x =>
+    x.classList.toggle("actif", x.dataset.onglet === (vue === "detail" ? ongletPrecedent : vue)));
 }
 
 /* ---------- Événements ---------- */
+document.getElementById("onglets").addEventListener("click", e => {
+  const o = e.target.dataset.onglet;
+  if (!o) return;
+  if (o === "catalogue") afficherCatalogue();
+  montrer(o);
+});
 document.getElementById("filtres").addEventListener("click", e => {
   if (!e.target.dataset.filtre) return;
   filtre = e.target.dataset.filtre;
   document.querySelectorAll("#filtres button").forEach(x => x.classList.toggle("actif", x === e.target));
   afficherGroupes();
 });
-document.getElementById("detail").addEventListener("click", e => {
-  const s = e.target.closest(".skin");
-  const liste = document.getElementById("liste-skins");
-  if (!s || !liste || s.classList.contains("fixe")) return;
-  const cle = liste.dataset.brawler + ":" + s.dataset.skin;
-  const coches = lireSkinsCoches();
-  if (coches[cle]) delete coches[cle]; else coches[cle] = true;
-  sauverSkinsCoches(coches);
-  s.classList.toggle("poss");
-  const total = liste.querySelectorAll(".skin").length;
-  document.getElementById("nb-skins").textContent = liste.querySelectorAll(".skin.poss").length + " / " + total;
-});
 document.getElementById("groupes").addEventListener("click", e => {
   const c = e.target.closest(".brawler[data-id]");
   if (c) ouvrirDetail(c.dataset.id);
+});
+document.getElementById("catalogue").addEventListener("click", e => {
+  const c = e.target.closest(".tuile-cat[data-id]");
+  if (c) ouvrirDetail(c.dataset.id);
+});
+document.getElementById("banniere").addEventListener("click", e => {
+  const i = e.target.closest("img.possede");
+  if (i) ouvrirDetail(i.dataset.id);
+});
+document.getElementById("detail").addEventListener("click", e => {
+  if (e.target.id === "btn-retour") { montrer(ongletPrecedent); return; }
+  const zone = e.target.closest(".skins");
+  if (!zone) return;
+  const id = zone.dataset.brawler;
+  const b = tous.find(x => x.id == id);
+  const tout = lireSkins();
+  const liste = tout[id] || [];
+  if (e.target.id === "btn-skin") {
+    const champ = document.getElementById("nom-skin");
+    const nom = champ.value.trim();
+    if (!nom) return;
+    liste.push({ n: nom, p: true });
+  } else if (e.target.dataset.suppr !== undefined) {
+    liste.splice(Number(e.target.dataset.suppr), 1);
+  } else {
+    const puce = e.target.closest(".skin-puce");
+    if (!puce) return;
+    const s = liste[Number(puce.dataset.i)];
+    if (s) s.p = !s.p;
+  }
+  tout[id] = liste;
+  sauverSkins(tout);
+  zone.innerHTML = skinsHtml(b);
 });
 
 charger();
