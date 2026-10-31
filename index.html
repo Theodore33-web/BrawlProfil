@@ -210,6 +210,9 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .brawler .puissance { font-size: .6rem; padding: 1px 5px; top: 4px; left: 4px; }
 .brawler .equip { gap: 4px; font-size: .68rem; padding: 2px 3px; flex-wrap: wrap; }
 .brawler .badges { gap: 2px; font-size: .8rem; }
+.brawler .role { font-size: .62rem; color: var(--discret); line-height: 1.1; margin-bottom: 2px; }
+.ico { height: 1.15em; width: auto; vertical-align: middle; }
+.prestige-img { display: block; margin-top: 12px; border-radius: 12px; }
   </style>
 </head>
 <body>
@@ -283,6 +286,10 @@ const ICONES = {
   gear: "⚙️",
 };
 
+// Image d'hypercharge : colle ici l'URL d'une image si tu en trouves une (sinon emoji)
+const IMG_HYPERCHARGE = "";
+if (IMG_HYPERCHARGE) ICONES.hypercharge = '<img class="ico" src="' + IMG_HYPERCHARGE + '" alt="">';
+
 // Raretés : ordre d'affichage, nom français, couleur
 const RARETES = [
   { cle: "depart", nom: "Départ", couleur: "#9aa7b5" },
@@ -295,6 +302,18 @@ const RARETES = [
 ];
 const INCONNUE = { cle: "inconnue", nom: "Rareté inconnue", couleur: "#6b7280" };
 const RARETE_PAR_ID = { 1: "depart", 2: "rare", 3: "superrare", 4: "epique", 5: "mythique", 6: "legendaire", 7: "ultra" };
+
+// Rôles Brawlify -> français
+const ROLES = {
+  "damage dealer": "Dégâts", "tank": "Tank", "support": "Soigneur / soutien",
+  "controller": "Contrôleur", "assassin": "Assassin", "artillery": "Artilleur", "marksman": "Tireur d'élite",
+};
+const roleFr = nom => ROLES[String(nom).toLowerCase()] || nom;
+function hexOk(c) {
+  c = String(c || "").trim();
+  if (/^[0-9a-f]{6}$/i.test(c)) c = "#" + c;
+  return /^#[0-9a-f]{3,8}$/i.test(c) ? c : "";
+}
 
 const fmt = n => Number(n || 0).toLocaleString("fr-FR");
 const esc = t => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -309,6 +328,7 @@ const imgGadgetBord = id => CDN + "gadgets/regular/" + id + ".png";
 const imgStar = id => CDN + "star-powers/borderless/" + id + ".png";
 const imgStarBord = id => CDN + "star-powers/regular/" + id + ".png";
 const imgGear = id => CDN + "gears/regular/" + id + ".png";
+const imgPrestige = (id, n) => CDN + "prestiges/brawlers/" + id + "/" + n + ".png";
 
 // onerror : essaie une image de secours, sinon affiche l'emoji
 function repli(el, secours, emoji) {
@@ -319,6 +339,22 @@ function repli(el, secours, emoji) {
   el.replaceWith(d);
 }
 window.repli = repli;
+
+// onerror en chaîne : data-c = liste JSON d'images de secours, data-e = emoji final
+function chaine(el) {
+  let l = [];
+  try { l = JSON.parse(el.dataset.c || "[]"); } catch (e) {}
+  if (l.length) { const suivante = l.shift(); el.dataset.c = JSON.stringify(l); el.src = suivante; return; }
+  if (el.dataset.e) {
+    const d = document.createElement("div");
+    d.className = "pas-img";
+    d.textContent = el.dataset.e;
+    el.replaceWith(d);
+  } else {
+    el.style.visibility = "hidden";
+  }
+}
+window.chaine = chaine;
 
 let tous = [];
 let filtre = "tous";
@@ -454,7 +490,8 @@ function fusionner(joueur, jeu, extra) {
       id: b.id,
       nom: b.name,
       rarete: trouverRarete(e.rarity && e.rarity.name, e.rarity && e.rarity.id),
-      classe: e.class && e.class.name && e.class.name !== "Unknown" ? e.class.name : "",
+      classe: e.class && e.class.name && e.class.name !== "Unknown" ? roleFr(e.class.name) : "",
+      couleurHex: e.rarity && e.rarity.color ? hexOk(e.rarity.color) : "",
       description: e.description || "",
       possede: !!p,
       puissance: p ? p.power : 0,
@@ -472,6 +509,8 @@ function fusionner(joueur, jeu, extra) {
       max: { starPowers: cat.starPowers.length, gadgets: cat.gadgets.length, gears: cat.gears.length },
     };
   });
+  // couleur de chaque rareté fournie par Brawlify (hex)
+  tous.forEach(b => { if (b.couleurHex && b.rarete.cle !== "inconnue") b.rarete.couleur = b.couleurHex; });
   totaux = {
     starPowers: tous.reduce((t, b) => t + b.max.starPowers, 0),
     gadgets: tous.reduce((t, b) => t + b.max.gadgets, 0),
@@ -569,14 +608,20 @@ function afficherGroupes() {
   document.getElementById("groupes").innerHTML = html;
 }
 
+function roleHtml(b) {
+  return b.classe ? '<div class="role">' + esc(b.classe) + "</div>" : "";
+}
+
 function carteHtml(b) {
-  const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
+  const base = imgBrawler(b.id);
+  const src = b.possede && b.prestige > 0 ? imgPrestige(b.id, b.prestige) : base;
+  const img = '<div class="rond"><img src="' + src + '"' + (src !== base ? " data-c='[\"" + base + "\"]'" : "") + ' alt="" loading="lazy" onerror="chaine(this)"></div>';
   if (!b.possede) {
     return '<div class="brawler manquant">' + img +
-      '<div class="nom">' + esc(b.nom) + '</div><div class="etat">🔒 Non possédé</div></div>';
+      '<div class="nom">' + esc(b.nom) + '</div>' + roleHtml(b) + '<div class="etat">🔒 Non possédé</div></div>';
   }
   return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
-    '<div class="nom">' + esc(b.nom) + "</div>" +
+    '<div class="nom">' + esc(b.nom) + "</div>" + roleHtml(b) +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
     '<div class="info">Record ' + fmt(b.record) + "</div>" +
     '<div class="info">Rang ' + b.rang + (b.prestige ? " · " + ICONES.prestige + b.prestige : "") + "</div>" +
@@ -651,7 +696,9 @@ function ouvrirDetail(id) {
       '<button class="retour" id="btn-retour" title="Retour">←</button>' +
       "<h1>" + esc(b.nom) + "</h1>" +
       '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
-      (b.classe ? "<p>Classe : " + esc(b.classe) + "</p>" : "") +
+      (b.classe ? "<p>Rôle : " + esc(b.classe) + "</p>" : "") +
+      '<p>Couleur de rareté : <b style="color:' + esc(b.rarete.couleur) + '">' + esc(b.rarete.couleur) + "</b></p>" +
+      (b.prestige > 0 ? '<img class="prestige-img" src="' + imgPrestige(b.id, b.prestige) + '" alt="" style="max-width:130px" onerror="chaine(this)">' : "") +
       (b.description ? "<p>" + esc(b.description) + "</p>" : "") +
     "</div>" +
     // milieu
