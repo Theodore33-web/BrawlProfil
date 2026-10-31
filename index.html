@@ -6,11 +6,11 @@
   <title>Profil Brawl Stars</title>
   <style>
 :root {
-  --fond: #0f1226;
-  --carte: #1a1f3d;
-  --carte2: #232950;
-  --texte: #f2f4ff;
-  --discret: #9aa3d6;
+  --fond: #0b0d1a;
+  --carte: #151a33;
+  --carte2: #1e2548;
+  --texte: #eef1ff;
+  --discret: #8e98c9;
   --jaune: #ffc928;
   --bleu: #3aa0ff;
   --vert: #3ddc84;
@@ -19,7 +19,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #1f2557 0%, var(--fond) 60%) fixed;
+  background: linear-gradient(160deg, #1d1040 0%, var(--fond) 55%, #08232f 100%) fixed;
   color: var(--texte);
   font-family: "Trebuchet MS", system-ui, sans-serif;
 }
@@ -32,6 +32,7 @@ h2 { margin: 0; font-size: 1.3rem; }
   padding: 18px;
   margin-bottom: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  border: 1px solid rgba(255, 255, 255, .07);
 }
 .chargement, .erreur { text-align: center; color: var(--discret); }
 .erreur { color: var(--rouge); }
@@ -83,12 +84,12 @@ h2 { margin: 0; font-size: 1.3rem; }
 }
 .brawler:hover { transform: translateY(-3px); }
 .rond {
-  width: 92px; height: 92px; margin: 0 auto; border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--couleur) 55%, #fff 10%), var(--carte));
-  border: 3px solid var(--couleur);
+  width: 100px; height: 100px; margin: 0 auto; border-radius: 12px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--couleur) 60%, #000 0%), color-mix(in srgb, var(--couleur) 25%, var(--carte)));
+  border: 2px solid color-mix(in srgb, var(--couleur) 70%, #fff 20%);
   display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.rond img { width: 84%; height: 84%; object-fit: contain; }
+.rond img { width: 100%; height: 100%; object-fit: contain; }
 .brawler .nom { font-weight: bold; font-size: .95rem; margin: 6px 0 2px; }
 .brawler .info { font-size: .8rem; color: var(--discret); }
 .brawler .puissance {
@@ -104,6 +105,11 @@ h2 { margin: 0; font-size: 1.3rem; }
 .badges { display: flex; justify-content: center; gap: 5px; margin-top: 6px; font-size: .95rem; flex-wrap: wrap; }
 .badges .off { filter: grayscale(1); opacity: .25; }
 .sep { opacity: .3; }
+.equip {
+  display: flex; justify-content: center; gap: 8px; margin-top: 6px;
+  font-size: .8rem; background: rgba(0, 0, 0, .22); border-radius: 8px; padding: 3px 6px;
+}
+.modele { height: 340px !important; }
 
 /* ---------- Détail ---------- */
 .retour {
@@ -175,6 +181,9 @@ const ICONES = {
   buffieGadget: "🟩",
   buffieStarPower: "🟨",
   buffieHyperCharge: "🟪",
+  starPower: "⭐",
+  gadget: "🔧",
+  gear: "⚙️",
 };
 
 // Raretés : ordre d'affichage, nom français, couleur
@@ -191,6 +200,7 @@ const INCONNUE = { cle: "inconnue", nom: "Rareté inconnue", couleur: "#6b7280" 
 
 const fmt = n => Number(n || 0).toLocaleString("fr-FR");
 const imgBrawler = id => "https://cdn.brawlify.com/brawlers/borderless/" + id + ".png";
+const imgModele = id => "https://cdn.brawlify.com/brawlers/model/" + id + ".png";
 const imgIcone = id => "https://cdn.brawlify.com/profile-icons/regular/" + id + ".png";
 
 let tous = [];
@@ -307,8 +317,12 @@ function afficherStats(j) {
   const nbBg = mien.filter(b => b.buffies.gadget).length;
   const nbBs = mien.filter(b => b.buffies.starPower).length;
   const nbBh = mien.filter(b => b.buffies.hyperCharge).length;
+  const somme = cle => mien.reduce((t, b) => t + b[cle].length, 0);
   const stats = [
     ["🏆", fmt(j.trophies), "Trophées"],
+    [ICONES.starPower, somme("starPowers"), "Pouvoirs stellaires possédés"],
+    [ICONES.gadget, somme("gadgets"), "Gadgets possédés"],
+    [ICONES.gear, somme("gears"), "Équipements possédés"],
     ["🥇", fmt(j.highestTrophies), "Record de trophées"],
     ["⚔️", fmt(j["3vs3Victories"]), "Victoires 3c3"],
     ["🎯", fmt(j.soloVictories), "Victoires solo"],
@@ -364,6 +378,10 @@ function carteHtml(b) {
     '<div class="nom">' + b.nom + "</div>" +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
     '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
+    '<div class="equip">' +
+      '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + "</span>" +
+      '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + "</span>" +
+      '<span title="Équipements">' + ICONES.gear + b.gears.length + "</span></div>" +
     badgesHtml(b) + "</div>";
 }
 
@@ -391,7 +409,7 @@ function ouvrirDetail(id) {
     "</div>" +
     // milieu
     '<div class="col-milieu">' +
-      '<div class="modele" id="modele"><img src="' + imgBrawler(b.id) + '" alt=""></div>' +
+      '<div class="modele" id="modele"><img src="' + imgModele(b.id) + '" alt="" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
       '<div class="skins"><h3>Skins</h3><div class="liste-skins">' + skins + "</div>" +
       '<p class="note">La possession des skins n\'est pas fournie par l\'API : tous les skins du brawler sont affichés pour l\'instant.</p></div>' +
     "</div>" +
