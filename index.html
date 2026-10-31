@@ -219,6 +219,19 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .ligne.non .gauche { opacity: .45; }
 .ligne.non b { color: var(--discret); }
 .desc { color: var(--discret); font-size: .85rem; line-height: 1.35; margin: 8px 0; }
+
+/* vue détail : la couleur de la rareté sert de fond */
+.detail {
+  background: var(--couleur);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--couleur) 78%, #000), color-mix(in srgb, var(--couleur) 32%, #0b0d1a));
+}
+.detail .bandeau-grand { background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .3); }
+.detail .ligne { border-bottom-color: rgba(255, 255, 255, .22); }
+.detail .ligne b { color: #fff; }
+.detail .ligne.non b { color: rgba(255, 255, 255, .6); }
+.detail .desc, .detail .vide, .detail .col-gauche p, .detail details { color: rgba(255, 255, 255, .88); }
+.detail .modele { background: rgba(0, 0, 0, .22); }
+.detail .retour { background: rgba(0, 0, 0, .35); }
   </style>
 </head>
 <body>
@@ -234,7 +247,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
 
       <!-- 3. Bannière (15 emojis par ligne) -->
       <section class="banniere">
-        <div class="banniere-titre" id="banniere-titre">Brawl Stars</div>
+        <div class="banniere-titre" id="banniere-titre">Bannière Emoji Brawlers</div>
         <div class="banniere-grille" id="banniere"></div>
       </section>
 
@@ -250,11 +263,6 @@ pre { white-space: pre-wrap; word-break: break-all; }
             <h2>Brawlers <span id="compteur"></span></h2>
             <div class="barre"><div id="barre-remplie"></div></div>
           </div>
-          <div class="filtres" id="filtres">
-            <button data-filtre="tous" class="actif">Tous</button>
-            <button data-filtre="possedes">Possédés</button>
-            <button data-filtre="manquants">Manquants</button>
-          </div>
           <p class="note cache" id="info-rarete"></p>
           <div id="groupes"></div>
         </section>
@@ -263,7 +271,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
       <div id="vue-catalogue" class="cache">
         <section class="carte">
           <h2>Catalogue <span id="compteur-cat" style="color:var(--jaune)"></span></h2>
-          <p class="note">Tous les brawlers du jeu avec leur modèle. Touche un brawler pour voir ses gadgets, pouvoirs stellaires, équipements et skins.</p>
+          <p class="note">Tous les brawlers du jeu avec leur modèle. Touche un brawler pour voir ses gadgets, pouvoirs stellaires, équipements.</p>
           <div id="catalogue"></div>
         </section>
       </div>
@@ -277,7 +285,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
 
   <script>
 const URL_GOOGLE = "https://script.google.com/macros/s/AKfycbzo32S-q5NS_qMPuH9daIQmMiC6APMZfnvUcq7PhEfoh0gNgup3iyqKYtNfEu5Dn6IVCw/exec";
-const URL_BRAWLIFY = "https://api.brawlify.com/v1/brawlers";
+const URLS_BRAWLIFY = ["https://api.brawlify.com/v1/brawlers", "https://api.brawlapi.com/v1/brawlers"];
 const CDN = "https://cdn.brawlify.com/";
 
 // Emojis provisoires (utilisés quand une image n'existe pas, ex. hypercharge)
@@ -312,9 +320,10 @@ const RARETE_PAR_ID = { 1: "depart", 2: "rare", 3: "superrare", 4: "epique", 5: 
 // Rôles Brawlify -> français
 const ROLES = {
   "damage dealer": "Dégâts", "tank": "Tank", "support": "Soigneur / soutien",
-  "controller": "Contrôleur", "assassin": "Assassin", "artillery": "Artilleur", "marksman": "Tireur d'élite",
+  "controller": "Contrôleur", "assassin": "Assassin", "artillery": "Lanceur", "marksman": "Tireur d'élite",
 };
 const roleFr = nom => ROLES[String(nom).toLowerCase()] || nom;
+const nomDe = x => (x && typeof x === "object") ? (x.name || "") : (typeof x === "string" ? x : "");
 function hexOk(c) {
   c = String(c || "").trim();
   if (/^[0-9a-f]{6}$/i.test(c)) c = "#" + c;
@@ -363,18 +372,9 @@ function chaine(el) {
 window.chaine = chaine;
 
 let tous = [];
-let filtre = "tous";
 let totaux = { starPowers: 0, gadgets: 0, gears: 0 };
 let ongletCourant = "liste";
 let ongletPrecedent = "liste";
-
-/* ---------- Skins (saisis à la main : aucune API ne les fournit) ---------- */
-function lireSkins() {
-  try { return JSON.parse(localStorage.getItem("skinsManuels") || "{}"); } catch (e) { return {}; }
-}
-function sauverSkins(o) {
-  try { localStorage.setItem("skinsManuels", JSON.stringify(o)); } catch (e) {}
-}
 
 /* ---------- Rareté ---------- */
 function trouverRarete(nomAnglais, id) {
@@ -394,28 +394,32 @@ function trouverRarete(nomAnglais, id) {
 }
 
 async function chargerBrawlify() {
-  try {
-    const r = await fetch(URL_BRAWLIFY);
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const d = await r.json();
-    const liste = d.list || d.items || (Array.isArray(d) ? d : []);
-    if (!liste.length) throw new Error("réponse vide");
-    const map = {};
-    liste.forEach(b => {
-      map[b.id] = {
-        rarity: b.rarity, class: b.class, description: b.description,
-        starPowers: b.starPowers, gadgets: b.gadgets,
-      };
-    });
-    try { localStorage.setItem("brawlifyCache", JSON.stringify(map)); } catch (e) {}
-    return { map, source: "direct" };
-  } catch (e) {
+  let derniere = "";
+  for (const url of URLS_BRAWLIFY) {
     try {
-      const c = JSON.parse(localStorage.getItem("brawlifyCache") || "null");
-      if (c) return { map: c, source: "cache", erreur: e.message };
-    } catch (x) {}
-    return { map: {}, source: "aucune", erreur: e.message };
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      const liste = d.list || d.items || (Array.isArray(d) ? d : []);
+      if (!liste.length) throw new Error("réponse vide");
+      const map = {};
+      liste.forEach(b => {
+        map[b.id] = {
+          rarity: b.rarity, class: b.class, description: b.description,
+          starPowers: b.starPowers, gadgets: b.gadgets,
+        };
+      });
+      try { localStorage.setItem("brawlifyCache", JSON.stringify(map)); } catch (e) {}
+      return { map, source: "direct" };
+    } catch (e) {
+      derniere = e.message;
+    }
   }
+  try {
+    const c = JSON.parse(localStorage.getItem("brawlifyCache") || "null");
+    if (c) return { map: c, source: "cache", erreur: derniere };
+  } catch (x) {}
+  return { map: {}, source: "aucune", erreur: derniere };
 }
 
 async function charger() {
@@ -495,8 +499,8 @@ function fusionner(joueur, jeu, extra) {
     return {
       id: b.id,
       nom: b.name,
-      rarete: trouverRarete(e.rarity && e.rarity.name, e.rarity && e.rarity.id),
-      classe: e.class && e.class.name && e.class.name !== "Unknown" ? roleFr(e.class.name) : "",
+      rarete: trouverRarete(nomDe(e.rarity), e.rarity && e.rarity.id),
+      classe: nomDe(e.class) && nomDe(e.class) !== "Unknown" ? roleFr(nomDe(e.class)) : "",
       couleurHex: e.rarity && e.rarity.color ? hexOk(e.rarity.color) : "",
       description: e.description || "",
       possede: !!p,
@@ -532,7 +536,7 @@ function fusionner(joueur, jeu, extra) {
 function afficherBanniere() {
   const ordre = RARETES.concat([INCONNUE]);
   const rang = b => ordre.findIndex(r => r.cle === b.rarete.cle);
-  const liste = tous.slice().sort((a, b) => rang(a) - rang(b) || a.nom.localeCompare(b.nom));
+  const liste = tous.slice().sort((a, b) => rang(a) - rang(b) || a.id - b.id);
   document.getElementById("banniere").innerHTML = liste.map(b =>
     '<div class="cell ' + (b.possede ? "possede" : "absent") + '" data-id="' + b.id + '" title="' + esc(b.nom) + '">' +
     '<img src="' + imgEmoji(b.id) + '" alt="' + esc(b.nom) + '" onerror="this.style.visibility=\'hidden\'"></div>'
@@ -543,7 +547,6 @@ function afficherBanniere() {
 function afficherProfil(j) {
   const icone = j.icon ? imgIcone(j.icon.id) : "";
   const club = j.club && j.club.name ? j.club.name : "Aucun club";
-  document.getElementById("banniere-titre").textContent = j.name + " · " + j.tag;
   document.getElementById("profil").innerHTML =
     '<img class="avatar" src="' + icone + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
     "<div><h1>" + esc(j.name) + '</h1><p class="tag">' + esc(j.tag) + "</p>" +
@@ -600,11 +603,9 @@ function afficherGroupes() {
   const ordre = RARETES.concat([INCONNUE]);
   let html = "";
   ordre.forEach(r => {
-    const liste = tous.filter(b => b.rarete.cle === r.cle && (
-      filtre === "tous" || (filtre === "possedes" ? b.possede : !b.possede)
-    ));
+    const liste = tous.filter(b => b.rarete.cle === r.cle);
     if (!liste.length) return;
-    liste.sort((a, b) => b.trophees - a.trophees || a.nom.localeCompare(b.nom));
+    liste.sort((a, b) => a.id - b.id);
     const totalR = tous.filter(b => b.rarete.cle === r.cle);
     const possR = totalR.filter(b => b.possede).length;
     html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
@@ -627,7 +628,7 @@ function carteHtml(b) {
   return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
     '<div class="nom">' + esc(b.nom) + "</div>" + roleHtml(b) +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
-    '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
+    '<div class="info">Record ' + fmt(b.record) + "</div>" +
     '<div class="equip">' +
       '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + (b.max.starPowers ? "/" + b.max.starPowers : "") + "</span>" +
       '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + (b.max.gadgets ? "/" + b.max.gadgets : "") + "</span>" +
@@ -637,18 +638,15 @@ function carteHtml(b) {
 
 /* ---------- Catalogue ---------- */
 function afficherCatalogue() {
-  const skins = lireSkins();
   const ordre = RARETES.concat([INCONNUE]);
   let html = "";
   ordre.forEach(r => {
-    const liste = tous.filter(b => b.rarete.cle === r.cle).sort((a, b) => a.nom.localeCompare(b.nom));
+    const liste = tous.filter(b => b.rarete.cle === r.cle).sort((a, b) => a.id - b.id);
     if (!liste.length) return;
     html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
       '<div class="bandeau-rarete"><span>' + r.nom + "</span><span>" + liste.length + "</span></div>" +
       '<div class="grille-cat">' + liste.map(b => {
-        const sk = skins[b.id] || [];
-        const nbP = sk.filter(s => s.p).length;
-        const sous = sk.length ? "🎭 " + nbP + " / " + sk.length + " skin" + (sk.length > 1 ? "s" : "") : (b.possede ? "Possédé" : "Non possédé");
+        const sous = esc(b.classe || (b.possede ? "Possédé" : "Non possédé"));
         return '<div class="tuile-cat' + (b.possede ? "" : " absent") + '" data-id="' + b.id + '">' +
           '<div class="vitrine"><img src="' + imgModele(b.id) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
           '<div class="nom">' + esc(b.nom) + '</div><div class="sous">' + sous + "</div></div>";
@@ -664,21 +662,6 @@ function objetsHtml(liste, possedes, urlImg, urlSecours, emoji, vide) {
   return liste.map(x =>
     ligneIcone(miniImg([urlImg(x.id)].concat(urlSecours ? [urlSecours(x.id)] : []), emoji), esc(x.name), ids.has(x.id))
   ).join("");
-}
-
-function skinsHtml(b) {
-  const sk = (lireSkins()[b.id] || []);
-  const puces = sk.length
-    ? sk.map((s, i) =>
-        '<div class="skin-puce' + (s.p ? " poss" : "") + '" data-i="' + i + '">🎭 ' + esc(s.n) +
-        '<span class="x" data-suppr="' + i + '" title="Supprimer">✕</span></div>'
-      ).join("")
-    : '<p class="vide">Aucun skin saisi pour ce brawler.</p>';
-  return '<h3>Skins <span style="color:var(--jaune)">' + sk.filter(s => s.p).length + " / " + sk.length + "</span></h3>" +
-    '<div class="liste-skins" id="liste-skins">' + puces + "</div>" +
-    '<div class="ajout-skin"><input id="nom-skin" type="text" maxlength="40" placeholder="Nom du skin à ajouter">' +
-    '<button id="btn-skin">Ajouter</button></div>' +
-    '<p class="note">Ni Brawlify ni l\'API officielle ne fournissent les skins : ajoute ceux que tu veux suivre, touche-les pour marquer ceux que tu possèdes (enregistré dans ce navigateur).</p>';
 }
 
 /* ---------- Lignes harmonisées : icône + nom, valeur Oui / Non ---------- */
@@ -709,18 +692,16 @@ function ouvrirDetail(id) {
       '<button class="retour" id="btn-retour" title="Retour">←</button>' +
       "<h1>" + esc(b.nom) + "</h1>" +
       '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
-      (b.classe ? "<p>Rôle : " + esc(b.classe) + "</p>" : "") +
-      '<p>Couleur de rareté : <b style="color:' + esc(b.rarete.couleur) + '">' + esc(b.rarete.couleur) + "</b></p>" +
     "</div>" +
     // milieu
     '<div class="col-milieu">' +
       '<div class="modele" id="modele"><img src="' + imgModele(b.id) + '" alt="" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
-      '<div class="skins" data-brawler="' + b.id + '">' + skinsHtml(b) + "</div>" +
     "</div>" +
     // droite
     '<div class="col-droite">' +
       "<h3>Caractéristiques</h3>" +
-      '<div class="ligne"><span>Rareté</span><b style="color:' + esc(b.rarete.couleur) + '">' + esc(b.rarete.nom) + "</b></div>" +
+      '<div class="ligne"><span>Rareté</span><b>' + esc(b.rarete.nom) + "</b></div>" +
+      (b.classe ? '<div class="ligne"><span>Rôle</span><b>' + esc(b.classe) + "</b></div>" : "") +
       (b.description ? '<p class="desc">' + esc(b.description) + "</p>" : "") +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
@@ -728,8 +709,9 @@ function ouvrirDetail(id) {
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
           '<div class="ligne"><span>' + ICONES.prestige + ' Prestige actuel</span><b>' + (b.prestige || "—") + "</b></div>"
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
-      "<h3>🔥 Hypercharge et buffies</h3>" +
+      "<h3>🔥 Hypercharge</h3>" +
       ligneIcone(miniImg(IMG_HYPERCHARGE ? [IMG_HYPERCHARGE] : [], "🔥"), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
+      "<h3>✨ Buffies</h3>" +
       ligneIcone(miniImg([], ICONES.buffieGadget), "Buffie gadget", buf.gadget) +
       ligneIcone(miniImg([], ICONES.buffieStarPower), "Buffie pouvoir stellaire", buf.starPower) +
       ligneIcone(miniImg([], ICONES.buffieHyperCharge), "Buffie hypercharge", buf.hyperCharge) +
@@ -739,7 +721,6 @@ function ouvrirDetail(id) {
         objetsHtml(c.starPowers, b.starPowers, imgStar, imgStarBord, ICONES.starPower, "Aucun pouvoir stellaire") +
       "<h3>⚙️ Équipements " + b.gears.length + (b.max.gears ? " / " + b.max.gears : "") + "</h3>" +
         objetsHtml(c.gears, b.gears, imgGear, null, ICONES.gear, "Aucun équipement") +
-      "<details><summary>Données brutes de l'API</summary><pre>" + esc(JSON.stringify(b.brut, null, 1)) + "</pre></details>" +
     "</div>";
 
   montrer("detail");
@@ -766,12 +747,6 @@ document.getElementById("onglets").addEventListener("click", e => {
   if (o === "catalogue") afficherCatalogue();
   montrer(o);
 });
-document.getElementById("filtres").addEventListener("click", e => {
-  if (!e.target.dataset.filtre) return;
-  filtre = e.target.dataset.filtre;
-  document.querySelectorAll("#filtres button").forEach(x => x.classList.toggle("actif", x === e.target));
-  afficherGroupes();
-});
 document.getElementById("groupes").addEventListener("click", e => {
   const c = e.target.closest(".brawler[data-id]");
   if (c) ouvrirDetail(c.dataset.id);
@@ -785,29 +760,7 @@ document.getElementById("banniere").addEventListener("click", e => {
   if (i) ouvrirDetail(i.dataset.id);
 });
 document.getElementById("detail").addEventListener("click", e => {
-  if (e.target.id === "btn-retour") { montrer(ongletPrecedent); return; }
-  const zone = e.target.closest(".skins");
-  if (!zone) return;
-  const id = zone.dataset.brawler;
-  const b = tous.find(x => x.id == id);
-  const tout = lireSkins();
-  const liste = tout[id] || [];
-  if (e.target.id === "btn-skin") {
-    const champ = document.getElementById("nom-skin");
-    const nom = champ.value.trim();
-    if (!nom) return;
-    liste.push({ n: nom, p: true });
-  } else if (e.target.dataset.suppr !== undefined) {
-    liste.splice(Number(e.target.dataset.suppr), 1);
-  } else {
-    const puce = e.target.closest(".skin-puce");
-    if (!puce) return;
-    const s = liste[Number(puce.dataset.i)];
-    if (s) s.p = !s.p;
-  }
-  tout[id] = liste;
-  sauverSkins(tout);
-  zone.innerHTML = skinsHtml(b);
+  if (e.target.id === "btn-retour") montrer(ongletPrecedent);
 });
 
 charger();
