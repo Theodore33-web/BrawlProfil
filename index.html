@@ -52,10 +52,14 @@ h2 { margin: 0; font-size: 1.3rem; }
 }
 .niveau { color: var(--jaune); }
 
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.stat { background: var(--carte); border-radius: 16px; padding: 14px; text-align: center; }
-.stat b { display: block; font-size: 1.5rem; color: var(--jaune); }
-.stat span { color: var(--discret); font-size: .85rem; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 6px; margin-bottom: 12px; }
+.stat { background: var(--carte); border-radius: 10px; padding: 6px 8px; text-align: center; border: 1px solid rgba(255, 255, 255, .06); }
+.stat b { display: block; font-size: 1.05rem; color: var(--jaune); white-space: nowrap; }
+.stat span { color: var(--discret); font-size: .68rem; line-height: 1.1; display: block; }
+.skin { cursor: pointer; opacity: .35; filter: grayscale(.8); border: 1px solid transparent; }
+.skin.poss { opacity: 1; filter: none; border-color: var(--jaune); }
+.skin.fixe { cursor: default; }
+.skin .pas-img { height: 70px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
 
 /* ---------- Liste ---------- */
 .entete-brawlers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -205,6 +209,15 @@ const imgIcone = id => "https://cdn.brawlify.com/profile-icons/regular/" + id + 
 
 let tous = [];
 let filtre = "tous";
+let totaux = { starPowers: 0, gadgets: 0, gears: 0 };
+
+/* Skins cochés à la main (l'API officielle ne les donne pas), sauvegardés dans ce navigateur */
+function lireSkinsCoches() {
+  try { return JSON.parse(localStorage.getItem("skinsPossedes") || "{}"); } catch (e) { return {}; }
+}
+function sauverSkinsCoches(o) {
+  try { localStorage.setItem("skinsPossedes", JSON.stringify(o)); } catch (e) {}
+}
 
 function trouverRarete(nomAnglais) {
   const n = String(nomAnglais || "").toLowerCase();
@@ -293,8 +306,21 @@ function fusionner(joueur, jeu, extra) {
       hyper: p ? aHypercharge(p) : false,
       buffies: p ? lireBuffies(p) : { gadget: false, starPower: false, hyperCharge: false },
       brut: p || null,
+      // nombre maximum possible pour ce brawler (liste complète du jeu)
+      max: {
+        starPowers: Math.max((b.starPowers || []).length, (e.starPowers || []).length),
+        gadgets: Math.max((b.gadgets || []).length, (e.gadgets || []).length),
+        gears: (b.gears || []).length,
+      },
+      // skins que l'API indique comme possédés (si elle les fournit), sinon null
+      skinsApi: p && Array.isArray(p.skins) ? p.skins.map(s => String(s && (s.id || s.name) || s)) : null,
     };
   });
+  totaux = {
+    starPowers: tous.reduce((t, b) => t + b.max.starPowers, 0),
+    gadgets: tous.reduce((t, b) => t + b.max.gadgets, 0),
+    gears: tous.reduce((t, b) => t + b.max.gears, 0),
+  };
   const n = tous.filter(b => b.possede).length;
   document.getElementById("compteur").textContent = n + " / " + tous.length;
   document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
@@ -318,16 +344,17 @@ function afficherStats(j) {
   const nbBs = mien.filter(b => b.buffies.starPower).length;
   const nbBh = mien.filter(b => b.buffies.hyperCharge).length;
   const somme = cle => mien.reduce((t, b) => t + b[cle].length, 0);
+  const sur = total => total ? " / " + total : "";
   const stats = [
     ["🏆", fmt(j.trophies), "Trophées"],
-    [ICONES.starPower, somme("starPowers"), "Pouvoirs stellaires possédés"],
-    [ICONES.gadget, somme("gadgets"), "Gadgets possédés"],
-    [ICONES.gear, somme("gears"), "Équipements possédés"],
-    ["🥇", fmt(j.highestTrophies), "Record de trophées"],
+    [ICONES.starPower, somme("starPowers") + sur(totaux.starPowers), "Pouvoirs stellaires"],
+    [ICONES.gadget, somme("gadgets") + sur(totaux.gadgets), "Gadgets"],
+    [ICONES.gear, somme("gears") + sur(totaux.gears), "Équipements"],
+    ["🥇", fmt(j.highestTrophies), "Record"],
     ["⚔️", fmt(j["3vs3Victories"]), "Victoires 3c3"],
     ["🎯", fmt(j.soloVictories), "Victoires solo"],
     ["👥", fmt(j.duoVictories), "Victoires duo"],
-    ["⭐", fmt(j.expPoints), "Points d'expérience"],
+    ["✨", fmt(j.expPoints), "Expérience"],
     [ICONES.hypercharge, nbHyper + " / " + mien.length, "Hypercharges"],
     [ICONES.buffieGadget, nbBg + " / " + mien.length, "Buffies gadget"],
     [ICONES.buffieStarPower, nbBs + " / " + mien.length, "Buffies pouvoir stellaire"],
@@ -379,9 +406,9 @@ function carteHtml(b) {
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
     '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
     '<div class="equip">' +
-      '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + "</span>" +
-      '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + "</span>" +
-      '<span title="Équipements">' + ICONES.gear + b.gears.length + "</span></div>" +
+      '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + (b.max.starPowers ? "/" + b.max.starPowers : "") + "</span>" +
+      '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + (b.max.gadgets ? "/" + b.max.gadgets : "") + "</span>" +
+      '<span title="Équipements">' + ICONES.gear + b.gears.length + (b.max.gears ? "/" + b.max.gears : "") + "</span></div>" +
     badgesHtml(b) + "</div>";
 }
 
@@ -392,9 +419,23 @@ function ouvrirDetail(id) {
   const noms = l => l.length
     ? l.map(x => '<div class="ligne"><span>' + (x.name || x.id) + "</span></div>").join("")
     : '<p class="vide">Aucun</p>';
+  const coches = lireSkinsCoches();
+  const cleSkin = s => String(s.id || s.name);
+  const possedeSkin = s => b.skinsApi ? b.skinsApi.includes(cleSkin(s)) : !!coches[b.id + ":" + cleSkin(s)];
+  const nbSkins = b.skins.filter(possedeSkin).length;
   const skins = b.skins.length
-    ? b.skins.map(s => '<div class="skin"><img src="' + (s.imageUrl || s.image || "") + '" alt="" onerror="this.style.opacity=.2">' + (s.name || "") + "</div>").join("")
-    : '<p class="vide">Aucun skin trouvé</p>';
+    ? b.skins.map(s => {
+        const src = s.imageUrl || s.imageUrl2 || s.image || "";
+        const vignette = src
+          ? '<img src="' + src + '" alt="" onerror="this.outerHTML=\'<div class=pas-img>🎭</div>\'">'
+          : '<div class="pas-img">🎭</div>';
+        return '<div class="skin' + (possedeSkin(s) ? " poss" : "") + (b.skinsApi ? " fixe" : "") +
+          '" data-skin="' + cleSkin(s) + '">' + vignette + (s.name || "") + "</div>";
+      }).join("")
+    : '<p class="vide">Aucun skin trouvé pour ce brawler</p>';
+  const noteSkins = b.skinsApi
+    ? ""
+    : '<p class="note">L\'API officielle ne dit pas quels skins tu possèdes : touche un skin pour le marquer comme possédé (enregistré dans ce navigateur).</p>';
   const buf = b.buffies;
 
   document.getElementById("detail").style.setProperty("--couleur", b.rarete.couleur);
@@ -410,8 +451,8 @@ function ouvrirDetail(id) {
     // milieu
     '<div class="col-milieu">' +
       '<div class="modele" id="modele"><img src="' + imgModele(b.id) + '" alt="" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
-      '<div class="skins"><h3>Skins</h3><div class="liste-skins">' + skins + "</div>" +
-      '<p class="note">La possession des skins n\'est pas fournie par l\'API : tous les skins du brawler sont affichés pour l\'instant.</p></div>' +
+      '<div class="skins"><h3>Skins possédés <span id="nb-skins">' + nbSkins + " / " + b.skins.length + "</span></h3>" +
+      '<div class="liste-skins" id="liste-skins" data-brawler="' + b.id + '">' + skins + "</div>" + noteSkins + "</div>" +
     "</div>" +
     // droite
     '<div class="col-droite">' +
@@ -448,6 +489,18 @@ document.getElementById("filtres").addEventListener("click", e => {
   filtre = e.target.dataset.filtre;
   document.querySelectorAll("#filtres button").forEach(x => x.classList.toggle("actif", x === e.target));
   afficherGroupes();
+});
+document.getElementById("detail").addEventListener("click", e => {
+  const s = e.target.closest(".skin");
+  const liste = document.getElementById("liste-skins");
+  if (!s || !liste || s.classList.contains("fixe")) return;
+  const cle = liste.dataset.brawler + ":" + s.dataset.skin;
+  const coches = lireSkinsCoches();
+  if (coches[cle]) delete coches[cle]; else coches[cle] = true;
+  sauverSkinsCoches(coches);
+  s.classList.toggle("poss");
+  const total = liste.querySelectorAll(".skin").length;
+  document.getElementById("nb-skins").textContent = liste.querySelectorAll(".skin.poss").length + " / " + total;
 });
 document.getElementById("groupes").addEventListener("click", e => {
   const c = e.target.closest(".brawler[data-id]");
