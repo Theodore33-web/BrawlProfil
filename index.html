@@ -25,6 +25,7 @@ body {
 }
 main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 h2 { margin: 0; font-size: 1.3rem; }
+.cache { display: none !important; }
 .carte {
   background: var(--carte);
   border-radius: 18px;
@@ -35,6 +36,7 @@ h2 { margin: 0; font-size: 1.3rem; }
 .chargement, .erreur { text-align: center; color: var(--discret); }
 .erreur { color: var(--rouge); }
 
+/* ---------- Profil ---------- */
 .profil { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .avatar {
   width: 88px; height: 88px; border-radius: 50%;
@@ -54,68 +56,138 @@ h2 { margin: 0; font-size: 1.3rem; }
 .stat b { display: block; font-size: 1.5rem; color: var(--jaune); }
 .stat span { color: var(--discret); font-size: .85rem; }
 
+/* ---------- Liste ---------- */
 .entete-brawlers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 #compteur { color: var(--jaune); }
 .barre { flex: 1; min-width: 140px; height: 14px; background: var(--carte2); border-radius: 99px; overflow: hidden; }
 #barre-remplie { height: 100%; width: 0; background: linear-gradient(90deg, var(--bleu), var(--vert)); transition: width .6s; }
-.outils { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.filtres button, select, input {
-  background: var(--carte2); color: var(--texte); border: 0;
+.filtres { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.filtres button {
+  background: var(--carte2); color: var(--texte); border: 0; cursor: pointer;
   padding: 8px 14px; border-radius: 10px; font: inherit;
 }
-.filtres button { cursor: pointer; }
 .filtres button.actif { background: var(--jaune); color: #222; font-weight: bold; }
-input { flex: 1; min-width: 150px; }
 
-.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
-.brawler { background: var(--carte2); border-radius: 14px; padding: 10px; text-align: center; position: relative; }
-.brawler img { width: 84px; height: 84px; object-fit: contain; }
-.brawler .nom { font-weight: bold; font-size: .95rem; margin: 4px 0; }
+.groupe { margin-bottom: 22px; }
+.bandeau-rarete {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 14px; border-radius: 10px; margin-bottom: 10px;
+  font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5);
+  background: var(--couleur);
+}
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.brawler {
+  background: var(--carte2); border-radius: 16px; padding: 10px; text-align: center;
+  position: relative; cursor: pointer; border-bottom: 4px solid var(--couleur);
+  transition: transform .15s;
+}
+.brawler:hover { transform: translateY(-3px); }
+.rond {
+  width: 92px; height: 92px; margin: 0 auto; border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--couleur) 55%, #fff 10%), var(--carte));
+  border: 3px solid var(--couleur);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.rond img { width: 84%; height: 84%; object-fit: contain; }
+.brawler .nom { font-weight: bold; font-size: .95rem; margin: 6px 0 2px; }
 .brawler .info { font-size: .8rem; color: var(--discret); }
 .brawler .puissance {
   position: absolute; top: 6px; left: 6px; background: var(--bleu);
-  border-radius: 8px; padding: 1px 7px; font-size: .75rem; font-weight: bold;
+  border-radius: 8px; padding: 1px 7px; font-size: .72rem; font-weight: bold;
 }
 .brawler .troph { color: var(--jaune); font-weight: bold; }
-.brawler.manquant img { filter: grayscale(1) brightness(.4); }
+.brawler.manquant { cursor: default; opacity: .85; }
+.brawler.manquant:hover { transform: none; }
+.brawler.manquant .rond { filter: grayscale(1) brightness(.5); }
 .brawler.manquant .nom { color: var(--discret); }
 .brawler.manquant .etat { color: var(--rouge); font-size: .8rem; }
-.equip { display: flex; justify-content: center; gap: 6px; margin-top: 4px; font-size: .75rem; }
+.badges { display: flex; justify-content: center; gap: 5px; margin-top: 6px; font-size: .95rem; flex-wrap: wrap; }
+.badges .off { filter: grayscale(1); opacity: .25; }
+.sep { opacity: .3; }
+
+/* ---------- Détail ---------- */
+.retour {
+  background: var(--carte2); color: var(--texte); border: 0; cursor: pointer;
+  width: 46px; height: 46px; border-radius: 50%; font-size: 1.5rem; line-height: 1;
+}
+.detail { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
+.col-gauche h1 { margin: 14px 0 10px; font-size: 2rem; }
+.bandeau-grand {
+  padding: 8px 16px; border-radius: 10px; background: var(--couleur);
+  font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); display: inline-block;
+}
+.col-gauche p { color: var(--discret); font-size: .9rem; }
+.modele {
+  height: 300px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--couleur) 45%, var(--carte)), var(--carte2));
+}
+.modele img { max-height: 85%; max-width: 85%; object-fit: contain; }
+.skins h3, .col-droite h3 { margin: 16px 0 8px; font-size: 1.05rem; }
+.liste-skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
+.skin { background: var(--carte2); border-radius: 12px; padding: 6px; text-align: center; font-size: .7rem; }
+.skin img { width: 100%; height: 70px; object-fit: contain; border-radius: 10px; }
+.note { color: var(--discret); font-size: .8rem; }
+.ligne { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--carte2); font-size: .92rem; }
+.ligne b { color: var(--jaune); }
+.vide { color: var(--discret); font-style: italic; font-size: .9rem; }
+details { margin-top: 14px; font-size: .75rem; color: var(--discret); }
+pre { white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
   <main>
-    <section id="profil" class="carte profil">
-      <p class="chargement">Chargement du profil…</p>
-    </section>
+    <!-- ===== VUE LISTE ===== -->
+    <div id="vue-liste">
+      <section id="profil" class="carte profil">
+        <p class="chargement">Chargement du profil…</p>
+      </section>
 
-    <section id="stats" class="stats"></section>
+      <section id="stats" class="stats"></section>
 
-    <section class="carte">
-      <div class="entete-brawlers">
-        <h2>Brawlers <span id="compteur"></span></h2>
-        <div id="barre" class="barre"><div id="barre-remplie"></div></div>
-      </div>
-
-      <div class="outils">
+      <section class="carte">
+        <div class="entete-brawlers">
+          <h2>Brawlers <span id="compteur"></span></h2>
+          <div class="barre"><div id="barre-remplie"></div></div>
+        </div>
         <div class="filtres" id="filtres">
           <button data-filtre="tous" class="actif">Tous</button>
           <button data-filtre="possedes">Possédés</button>
           <button data-filtre="manquants">Manquants</button>
         </div>
-        <select id="tri">
-          <option value="trophees">Tri : trophées</option>
-          <option value="puissance">Tri : puissance</option>
-          <option value="nom">Tri : nom</option>
-        </select>
-        <input id="recherche" type="search" placeholder="Rechercher un brawler…">
-      </div>
+        <div id="groupes"></div>
+      </section>
+    </div>
 
-      <div id="grille" class="grille"></div>
-    </section>
+    <!-- ===== VUE DÉTAIL ===== -->
+    <div id="vue-detail" class="cache">
+      <section class="carte detail" id="detail"></section>
+    </div>
   </main>
+
   <script>
 const URL_GOOGLE = "https://script.google.com/macros/s/AKfycbzo32S-q5NS_qMPuH9daIQmMiC6APMZfnvUcq7PhEfoh0gNgup3iyqKYtNfEu5Dn6IVCw/exec";
+const URL_BRAWLIFY = "https://api.brawlify.com/v1/brawlers";
+
+// Emojis provisoires : remplace chaque valeur par une balise <img> plus tard
+const ICONES = {
+  hypercharge: "🔥",
+  buffieGadget: "🟩",
+  buffieStarPower: "🟨",
+  buffieHyperCharge: "🟪",
+};
+
+// Raretés : ordre d'affichage, nom français, couleur
+const RARETES = [
+  { cle: "depart", nom: "Départ", couleur: "#9aa7b5" },
+  { cle: "rare", nom: "Rare", couleur: "#3dbb4a" },
+  { cle: "superrare", nom: "Super rare", couleur: "#2f8cff" },
+  { cle: "epique", nom: "Épique", couleur: "#a64bf4" },
+  { cle: "mythique", nom: "Mythique", couleur: "#ee3a3a" },
+  { cle: "legendaire", nom: "Légendaire", couleur: "#ffc928" },
+  { cle: "ultra", nom: "Ultra légendaire", couleur: "#ff5fd2" },
+];
+const INCONNUE = { cle: "inconnue", nom: "Rareté inconnue", couleur: "#6b7280" };
 
 const fmt = n => Number(n || 0).toLocaleString("fr-FR");
 const imgBrawler = id => "https://cdn.brawlify.com/brawlers/borderless/" + id + ".png";
@@ -124,19 +196,101 @@ const imgIcone = id => "https://cdn.brawlify.com/profile-icons/regular/" + id + 
 let tous = [];
 let filtre = "tous";
 
+function trouverRarete(nomAnglais) {
+  const n = String(nomAnglais || "").toLowerCase();
+  if (!n) return INCONNUE;
+  let cle = "depart";
+  if (n.includes("ultra")) cle = "ultra";
+  else if (n.includes("legend")) cle = "legendaire";
+  else if (n.includes("mythic")) cle = "mythique";
+  else if (n.includes("epic")) cle = "epique";
+  else if (n.includes("super")) cle = "superrare";
+  else if (n.includes("rare")) cle = "rare";
+  return RARETES.find(r => r.cle === cle);
+}
+
+async function chargerBrawlify() {
+  try {
+    const r = await fetch(URL_BRAWLIFY);
+    const d = await r.json();
+    const map = {};
+    (d.list || d.items || d || []).forEach(b => { map[b.id] = b; });
+    return map;
+  } catch (e) {
+    return {};
+  }
+}
+
 async function charger() {
   try {
-    const r = await fetch(URL_GOOGLE);
+    const [r, extra] = await Promise.all([fetch(URL_GOOGLE), chargerBrawlify()]);
     const d = await r.json();
     if (d.erreur) throw new Error(d.erreur);
     afficherProfil(d.player);
-    fusionner(d.player, d.brawlers.items || []);
-    afficherGrille();
+    fusionner(d.player, d.brawlers.items || [], extra);
+    afficherStats(d.player);
+    afficherGroupes();
   } catch (e) {
     document.getElementById("profil").innerHTML = '<p class="erreur">' + e.message + "</p>";
   }
 }
 
+/* ---------- Lecture des données équipements ---------- */
+function aHypercharge(b) {
+  const h = b.hyperCharges || b.hypercharges || b.hyperCharge;
+  return Array.isArray(h) ? h.length > 0 : !!h;
+}
+function lireBuffies(b) {
+  const r = { gadget: false, starPower: false, hyperCharge: false };
+  const x = b.buffies || b.buffs;
+  if (!x) return r;
+  if (Array.isArray(x)) {
+    x.forEach(i => {
+      const t = String(i && (i.type || i.name) || i).toLowerCase();
+      if (t.includes("gadget")) r.gadget = true;
+      else if (t.includes("star")) r.starPower = true;
+      else if (t.includes("hyper")) r.hyperCharge = true;
+    });
+  } else {
+    r.gadget = !!(x.gadget || x.gadgets);
+    r.starPower = !!(x.starPower || x.starPowers);
+    r.hyperCharge = !!(x.hyperCharge || x.hyperCharges || x.hypercharge);
+  }
+  return r;
+}
+
+function fusionner(joueur, jeu, extra) {
+  const possedes = {};
+  (joueur.brawlers || []).forEach(b => { possedes[b.id] = b; });
+  tous = jeu.map(b => {
+    const p = possedes[b.id];
+    const e = extra[b.id] || {};
+    return {
+      id: b.id,
+      nom: b.name,
+      rarete: trouverRarete(e.rarity && e.rarity.name),
+      classe: e.class && e.class.name ? e.class.name : "",
+      description: e.description || "",
+      skins: e.skins || [],
+      possede: !!p,
+      puissance: p ? p.power : 0,
+      trophees: p ? p.trophies : 0,
+      record: p ? p.highestTrophies : 0,
+      rang: p ? p.rank : 0,
+      gadgets: p ? (p.gadgets || []) : [],
+      starPowers: p ? (p.starPowers || []) : [],
+      gears: p ? (p.gears || []) : [],
+      hyper: p ? aHypercharge(p) : false,
+      buffies: p ? lireBuffies(p) : { gadget: false, starPower: false, hyperCharge: false },
+      brut: p || null,
+    };
+  });
+  const n = tous.filter(b => b.possede).length;
+  document.getElementById("compteur").textContent = n + " / " + tous.length;
+  document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
+}
+
+/* ---------- Profil + stats ---------- */
 function afficherProfil(j) {
   const icone = j.icon ? imgIcone(j.icon.id) : "";
   const club = j.club && j.club.name ? j.club.name : "Aucun club";
@@ -145,79 +299,142 @@ function afficherProfil(j) {
     "<div><h1>" + j.name + '</h1><p class="tag">' + j.tag + "</p>" +
     '<span class="pastille niveau">Niveau ' + j.expLevel + "</span>" +
     '<span class="pastille">🛡️ ' + club + "</span></div>";
+}
 
+function afficherStats(j) {
+  const mien = tous.filter(b => b.possede);
+  const nbHyper = mien.filter(b => b.hyper).length;
+  const nbBg = mien.filter(b => b.buffies.gadget).length;
+  const nbBs = mien.filter(b => b.buffies.starPower).length;
+  const nbBh = mien.filter(b => b.buffies.hyperCharge).length;
   const stats = [
-    ["🏆", j.trophies, "Trophées"],
-    ["🥇", j.highestTrophies, "Record de trophées"],
-    ["⚔️", j["3vs3Victories"], "Victoires 3c3"],
-    ["🎯", j.soloVictories, "Victoires solo"],
-    ["👥", j.duoVictories, "Victoires duo"],
-    ["⭐", j.expPoints, "Points d'expérience"],
+    ["🏆", fmt(j.trophies), "Trophées"],
+    ["🥇", fmt(j.highestTrophies), "Record de trophées"],
+    ["⚔️", fmt(j["3vs3Victories"]), "Victoires 3c3"],
+    ["🎯", fmt(j.soloVictories), "Victoires solo"],
+    ["👥", fmt(j.duoVictories), "Victoires duo"],
+    ["⭐", fmt(j.expPoints), "Points d'expérience"],
+    [ICONES.hypercharge, nbHyper + " / " + mien.length, "Hypercharges"],
+    [ICONES.buffieGadget, nbBg + " / " + mien.length, "Buffies gadget"],
+    [ICONES.buffieStarPower, nbBs + " / " + mien.length, "Buffies pouvoir stellaire"],
+    [ICONES.buffieHyperCharge, nbBh + " / " + mien.length, "Buffies hypercharge"],
   ];
   document.getElementById("stats").innerHTML = stats
-    .map(s => '<div class="stat"><b>' + s[0] + " " + fmt(s[1]) + "</b><span>" + s[2] + "</span></div>")
+    .map(s => '<div class="stat"><b>' + s[0] + " " + s[1] + "</b><span>" + s[2] + "</span></div>")
     .join("");
 }
 
-function fusionner(joueur, jeu) {
-  const possedes = {};
-  (joueur.brawlers || []).forEach(b => { possedes[b.id] = b; });
-  tous = jeu.map(b => {
-    const p = possedes[b.id];
-    return {
-      id: b.id,
-      nom: b.name,
-      possede: !!p,
-      puissance: p ? p.power : 0,
-      trophees: p ? p.trophies : 0,
-      record: p ? p.highestTrophies : 0,
-      rang: p ? p.rank : 0,
-      gadgets: p ? (p.gadgets || []).length : 0,
-      starPowers: p ? (p.starPowers || []).length : 0,
-      gears: p ? (p.gears || []).length : 0,
-    };
-  });
-  const n = tous.filter(b => b.possede).length;
-  document.getElementById("compteur").textContent = n + " / " + tous.length;
-  document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
+/* ---------- Liste par rareté ---------- */
+function badgesHtml(b) {
+  const on = (ok, ico, titre) => '<span class="' + (ok ? "" : "off") + '" title="' + titre + '">' + ico + "</span>";
+  return '<div class="badges">' +
+    on(b.hyper, ICONES.hypercharge, "Hypercharge") +
+    '<span class="sep">|</span>' +
+    on(b.buffies.gadget, ICONES.buffieGadget, "Buffie gadget") +
+    on(b.buffies.starPower, ICONES.buffieStarPower, "Buffie pouvoir stellaire") +
+    on(b.buffies.hyperCharge, ICONES.buffieHyperCharge, "Buffie hypercharge") +
+    "</div>";
 }
 
-function afficherGrille() {
-  const tri = document.getElementById("tri").value;
-  const q = document.getElementById("recherche").value.trim().toLowerCase();
-  let liste = tous.filter(b => {
-    if (filtre === "possedes" && !b.possede) return false;
-    if (filtre === "manquants" && b.possede) return false;
-    return !q || b.nom.toLowerCase().includes(q);
+function afficherGroupes() {
+  const ordre = RARETES.concat([INCONNUE]);
+  let html = "";
+  ordre.forEach(r => {
+    const liste = tous.filter(b => b.rarete.cle === r.cle && (
+      filtre === "tous" || (filtre === "possedes" ? b.possede : !b.possede)
+    ));
+    if (!liste.length) return;
+    liste.sort((a, b) => b.trophees - a.trophees || a.nom.localeCompare(b.nom));
+    const totalR = tous.filter(b => b.rarete.cle === r.cle);
+    const possR = totalR.filter(b => b.possede).length;
+    html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
+      '<div class="bandeau-rarete"><span>' + r.nom + "</span><span>" + possR + " / " + totalR.length + "</span></div>" +
+      '<div class="grille">' + liste.map(carteHtml).join("") + "</div></div>";
   });
-  liste.sort((a, b) => {
-    if (tri === "nom") return a.nom.localeCompare(b.nom);
-    if (tri === "puissance") return b.puissance - a.puissance || b.trophees - a.trophees;
-    return b.trophees - a.trophees || a.nom.localeCompare(b.nom);
-  });
-  document.getElementById("grille").innerHTML = liste.map(b => {
-    const img = '<img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2">';
-    if (!b.possede) {
-      return '<div class="brawler manquant">' + img +
-        '<div class="nom">' + b.nom + '</div><div class="etat">🔒 Non possédé</div></div>';
-    }
-    return '<div class="brawler"><span class="puissance">Pu ' + b.puissance + "</span>" + img +
-      '<div class="nom">' + b.nom + "</div>" +
-      '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
-      '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
-      '<div class="equip"><span title="Gadgets">🔧' + b.gadgets + '</span><span title="Pouvoirs stellaires">⭐' +
-      b.starPowers + '</span><span title="Équipements">⚙️' + b.gears + "</span></div></div>";
-  }).join("");
+  document.getElementById("groupes").innerHTML = html;
 }
 
+function carteHtml(b) {
+  const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
+  if (!b.possede) {
+    return '<div class="brawler manquant">' + img +
+      '<div class="nom">' + b.nom + '</div><div class="etat">🔒 Non possédé</div></div>';
+  }
+  return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
+    '<div class="nom">' + b.nom + "</div>" +
+    '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
+    '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
+    badgesHtml(b) + "</div>";
+}
+
+/* ---------- Vue détail ---------- */
+function ouvrirDetail(id) {
+  const b = tous.find(x => x.id == id);
+  if (!b) return;
+  const noms = l => l.length
+    ? l.map(x => '<div class="ligne"><span>' + (x.name || x.id) + "</span></div>").join("")
+    : '<p class="vide">Aucun</p>';
+  const skins = b.skins.length
+    ? b.skins.map(s => '<div class="skin"><img src="' + (s.imageUrl || s.image || "") + '" alt="" onerror="this.style.opacity=.2">' + (s.name || "") + "</div>").join("")
+    : '<p class="vide">Aucun skin trouvé</p>';
+  const buf = b.buffies;
+
+  document.getElementById("detail").style.setProperty("--couleur", b.rarete.couleur);
+  document.getElementById("detail").innerHTML =
+    // gauche
+    '<div class="col-gauche">' +
+      '<button class="retour" id="btn-retour" title="Retour">←</button>' +
+      "<h1>" + b.nom + "</h1>" +
+      '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
+      (b.classe ? "<p>Classe : " + b.classe + "</p>" : "") +
+      (b.description ? "<p>" + b.description + "</p>" : "") +
+    "</div>" +
+    // milieu
+    '<div class="col-milieu">' +
+      '<div class="modele" id="modele"><img src="' + imgBrawler(b.id) + '" alt=""></div>' +
+      '<div class="skins"><h3>Skins</h3><div class="liste-skins">' + skins + "</div>" +
+      '<p class="note">La possession des skins n\'est pas fournie par l\'API : tous les skins du brawler sont affichés pour l\'instant.</p></div>' +
+    "</div>" +
+    // droite
+    '<div class="col-droite">' +
+      "<h3>Caractéristiques</h3>" +
+      '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
+      '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
+      '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
+      '<div class="ligne"><span>Rang</span><b>' + b.rang + "</b></div>" +
+      '<div class="ligne"><span>Dégâts</span><b>à venir</b></div>' +
+      '<div class="ligne"><span>' + ICONES.hypercharge + " Hypercharge</span><b>" + (b.hyper ? "Oui" : "Non") + "</b></div>" +
+      '<div class="ligne"><span>' + ICONES.buffieGadget + " Buffie gadget</span><b>" + (buf.gadget ? "Oui" : "Non") + "</b></div>" +
+      '<div class="ligne"><span>' + ICONES.buffieStarPower + " Buffie pouvoir stellaire</span><b>" + (buf.starPower ? "Oui" : "Non") + "</b></div>" +
+      '<div class="ligne"><span>' + ICONES.buffieHyperCharge + " Buffie hypercharge</span><b>" + (buf.hyperCharge ? "Oui" : "Non") + "</b></div>" +
+      "<h3>🔧 Gadgets</h3>" + noms(b.gadgets) +
+      "<h3>⭐ Pouvoirs stellaires</h3>" + noms(b.starPowers) +
+      "<h3>⚙️ Équipements</h3>" + noms(b.gears) +
+      "<details><summary>Données brutes de l'API</summary><pre>" + JSON.stringify(b.brut, null, 1) + "</pre></details>" +
+    "</div>";
+
+  document.getElementById("btn-retour").addEventListener("click", fermerDetail);
+  document.getElementById("vue-liste").classList.add("cache");
+  document.getElementById("vue-detail").classList.remove("cache");
+  window.scrollTo(0, 0);
+}
+
+function fermerDetail() {
+  document.getElementById("vue-detail").classList.add("cache");
+  document.getElementById("vue-liste").classList.remove("cache");
+}
+
+/* ---------- Événements ---------- */
 document.getElementById("filtres").addEventListener("click", e => {
   if (!e.target.dataset.filtre) return;
   filtre = e.target.dataset.filtre;
   document.querySelectorAll("#filtres button").forEach(x => x.classList.toggle("actif", x === e.target));
-  afficherGrille();
+  afficherGroupes();
 });
-document.getElementById("tri").addEventListener("change", afficherGrille);
-document.getElementById("recherche").addEventListener("input", afficherGrille);
+document.getElementById("groupes").addEventListener("click", e => {
+  const c = e.target.closest(".brawler[data-id]");
+  if (c) ouvrirDetail(c.dataset.id);
+});
 
 charger();
   </script>
