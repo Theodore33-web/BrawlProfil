@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profil Brawl Stars</title>
+  <style>
+:root {
+  --fond: #0f1226;
+  --carte: #1a1f3d;
+  --carte2: #232950;
+  --texte: #f2f4ff;
+  --discret: #9aa3d6;
+  --jaune: #ffc928;
+  --bleu: #3aa0ff;
+  --vert: #3ddc84;
+  --rouge: #ff5a5f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #1f2557 0%, var(--fond) 60%) fixed;
+  color: var(--texte);
+  font-family: "Trebuchet MS", system-ui, sans-serif;
+}
+main { max-width: 1000px; margin: 0 auto; padding: 16px; }
+h2 { margin: 0; font-size: 1.3rem; }
+.carte {
+  background: var(--carte);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+.chargement, .erreur { text-align: center; color: var(--discret); }
+.erreur { color: var(--rouge); }
+
+.profil { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.avatar {
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 4px solid var(--jaune); background: var(--carte2);
+  object-fit: cover;
+}
+.profil h1 { margin: 0; font-size: 2rem; }
+.tag { color: var(--discret); margin: 2px 0 8px; }
+.pastille {
+  display: inline-block; background: var(--carte2);
+  padding: 4px 12px; border-radius: 99px; font-size: .9rem; margin: 0 6px 6px 0;
+}
+.niveau { color: var(--jaune); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat { background: var(--carte); border-radius: 16px; padding: 14px; text-align: center; }
+.stat b { display: block; font-size: 1.5rem; color: var(--jaune); }
+.stat span { color: var(--discret); font-size: .85rem; }
+
+.entete-brawlers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+#compteur { color: var(--jaune); }
+.barre { flex: 1; min-width: 140px; height: 14px; background: var(--carte2); border-radius: 99px; overflow: hidden; }
+#barre-remplie { height: 100%; width: 0; background: linear-gradient(90deg, var(--bleu), var(--vert)); transition: width .6s; }
+.outils { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.filtres button, select, input {
+  background: var(--carte2); color: var(--texte); border: 0;
+  padding: 8px 14px; border-radius: 10px; font: inherit;
+}
+.filtres button { cursor: pointer; }
+.filtres button.actif { background: var(--jaune); color: #222; font-weight: bold; }
+input { flex: 1; min-width: 150px; }
+
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+.brawler { background: var(--carte2); border-radius: 14px; padding: 10px; text-align: center; position: relative; }
+.brawler img { width: 84px; height: 84px; object-fit: contain; }
+.brawler .nom { font-weight: bold; font-size: .95rem; margin: 4px 0; }
+.brawler .info { font-size: .8rem; color: var(--discret); }
+.brawler .puissance {
+  position: absolute; top: 6px; left: 6px; background: var(--bleu);
+  border-radius: 8px; padding: 1px 7px; font-size: .75rem; font-weight: bold;
+}
+.brawler .troph { color: var(--jaune); font-weight: bold; }
+.brawler.manquant img { filter: grayscale(1) brightness(.4); }
+.brawler.manquant .nom { color: var(--discret); }
+.brawler.manquant .etat { color: var(--rouge); font-size: .8rem; }
+.equip { display: flex; justify-content: center; gap: 6px; margin-top: 4px; font-size: .75rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="profil" class="carte profil">
+      <p class="chargement">Chargement du profil…</p>
+    </section>
+
+    <section id="stats" class="stats"></section>
+
+    <section class="carte">
+      <div class="entete-brawlers">
+        <h2>Brawlers <span id="compteur"></span></h2>
+        <div id="barre" class="barre"><div id="barre-remplie"></div></div>
+      </div>
+
+      <div class="outils">
+        <div class="filtres" id="filtres">
+          <button data-filtre="tous" class="actif">Tous</button>
+          <button data-filtre="possedes">Possédés</button>
+          <button data-filtre="manquants">Manquants</button>
+        </div>
+        <select id="tri">
+          <option value="trophees">Tri : trophées</option>
+          <option value="puissance">Tri : puissance</option>
+          <option value="nom">Tri : nom</option>
+        </select>
+        <input id="recherche" type="search" placeholder="Rechercher un brawler…">
+      </div>
+
+      <div id="grille" class="grille"></div>
+    </section>
+  </main>
+  <script>
+const URL_GOOGLE = "COLLE_ICI_TON_URL_EXEC";
+
+const fmt = n => Number(n || 0).toLocaleString("fr-FR");
+const imgBrawler = id => "https://cdn.brawlify.com/brawlers/borderless/" + id + ".png";
+const imgIcone = id => "https://cdn.brawlify.com/profile-icons/regular/" + id + ".png";
+
+let tous = [];
+let filtre = "tous";
+
+async function charger() {
+  try {
+    const r = await fetch(URL_GOOGLE);
+    const d = await r.json();
+    if (d.erreur) throw new Error(d.erreur);
+    afficherProfil(d.player);
+    fusionner(d.player, d.brawlers.items || []);
+    afficherGrille();
+  } catch (e) {
+    document.getElementById("profil").innerHTML = '<p class="erreur">' + e.message + "</p>";
+  }
+}
+
+function afficherProfil(j) {
+  const icone = j.icon ? imgIcone(j.icon.id) : "";
+  const club = j.club && j.club.name ? j.club.name : "Aucun club";
+  document.getElementById("profil").innerHTML =
+    '<img class="avatar" src="' + icone + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
+    "<div><h1>" + j.name + '</h1><p class="tag">' + j.tag + "</p>" +
+    '<span class="pastille niveau">Niveau ' + j.expLevel + "</span>" +
+    '<span class="pastille">🛡️ ' + club + "</span></div>";
+
+  const stats = [
+    ["🏆", j.trophies, "Trophées"],
+    ["🥇", j.highestTrophies, "Record de trophées"],
+    ["⚔️", j["3vs3Victories"], "Victoires 3c3"],
+    ["🎯", j.soloVictories, "Victoires solo"],
+    ["👥", j.duoVictories, "Victoires duo"],
+    ["⭐", j.expPoints, "Points d'expérience"],
+  ];
+  document.getElementById("stats").innerHTML = stats
+    .map(s => '<div class="stat"><b>' + s[0] + " " + fmt(s[1]) + "</b><span>" + s[2] + "</span></div>")
+    .join("");
+}
+
+function fusionner(joueur, jeu) {
+  const possedes = {};
+  (joueur.brawlers || []).forEach(b => { possedes[b.id] = b; });
+  tous = jeu.map(b => {
+    const p = possedes[b.id];
+    return {
+      id: b.id,
+      nom: b.name,
+      possede: !!p,
+      puissance: p ? p.power : 0,
+      trophees: p ? p.trophies : 0,
+      record: p ? p.highestTrophies : 0,
+      rang: p ? p.rank : 0,
+      gadgets: p ? (p.gadgets || []).length : 0,
+      starPowers: p ? (p.starPowers || []).length : 0,
+      gears: p ? (p.gears || []).length : 0,
+    };
+  });
+  const n = tous.filter(b => b.possede).length;
+  document.getElementById("compteur").textContent = n + " / " + tous.length;
+  document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
+}
+
+function afficherGrille() {
+  const tri = document.getElementById("tri").value;
+  const q = document.getElementById("recherche").value.trim().toLowerCase();
+  let liste = tous.filter(b => {
+    if (filtre === "possedes" && !b.possede) return false;
+    if (filtre === "manquants" && b.possede) return false;
+    return !q || b.nom.toLowerCase().includes(q);
+  });
+  liste.sort((a, b) => {
+    if (tri === "nom") return a.nom.localeCompare(b.nom);
+    if (tri === "puissance") return b.puissance - a.puissance || b.trophees - a.trophees;
+    return b.trophees - a.trophees || a.nom.localeCompare(b.nom);
+  });
+  document.getElementById("grille").innerHTML = liste.map(b => {
+    const img = '<img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2">';
+    if (!b.possede) {
+      return '<div class="brawler manquant">' + img +
+        '<div class="nom">' + b.nom + '</div><div class="etat">🔒 Non possédé</div></div>';
+    }
+    return '<div class="brawler"><span class="puissance">Pu ' + b.puissance + "</span>" + img +
+      '<div class="nom">' + b.nom + "</div>" +
+      '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
+      '<div class="info">Record ' + fmt(b.record) + " · Rang " + b.rang + "</div>" +
+      '<div class="equip"><span title="Gadgets">🔧' + b.gadgets + '</span><span title="Pouvoirs stellaires">⭐' +
+      b.starPowers + '</span><span title="Équipements">⚙️' + b.gears + "</span></div></div>";
+  }).join("");
+}
+
+document.getElementById("filtres").addEventListener("click", e => {
+  if (!e.target.dataset.filtre) return;
+  filtre = e.target.dataset.filtre;
+  document.querySelectorAll("#filtres button").forEach(x => x.classList.toggle("actif", x === e.target));
+  afficherGrille();
+});
+document.getElementById("tri").addEventListener("change", afficherGrille);
+document.getElementById("recherche").addEventListener("input", afficherGrille);
+
+charger();
+  </script>
+</body>
+</html>
