@@ -58,12 +58,6 @@ h2 { margin: 0; font-size: 1.3rem; }
 .banniere-grille .cell.absent img { filter: grayscale(1); opacity: .3; }
 
 /* ---------- Onglets ---------- */
-.onglets { display: flex; gap: 8px; margin-bottom: 12px; }
-.onglets button {
-  flex: 1; background: var(--carte); color: var(--texte); border: 1px solid rgba(255,255,255,.08);
-  padding: 10px; border-radius: 12px; font: inherit; font-weight: bold; cursor: pointer;
-}
-.onglets button.actif { background: var(--jaune); color: #222; border-color: var(--jaune); }
 
 /* ---------- Profil ---------- */
 .profil { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
@@ -88,8 +82,6 @@ h2 { margin: 0; font-size: 1.3rem; }
 /* ---------- Liste ---------- */
 .entete-brawlers { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 #compteur { color: var(--jaune); }
-.barre { flex: 1; min-width: 140px; height: 14px; background: var(--carte2); border-radius: 99px; overflow: hidden; }
-#barre-remplie { height: 100%; width: 0; background: linear-gradient(90deg, var(--bleu), var(--vert)); transition: width .6s; }
 .filtres { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .filtres button {
   background: var(--carte2); color: var(--texte); border: 0; cursor: pointer;
@@ -233,15 +225,22 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .rar { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; z-index: 2; }
 .rar img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .ligne.sans-barre { border-bottom: 0; padding-bottom: 0; }
+.brawler .puissance { z-index: 3; }
+.entete-brawlers { justify-content: space-between; }
+#btn-cat {
+  background: var(--carte2); color: var(--texte); border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px; padding: 6px 14px; font: inherit; font-weight: bold; cursor: pointer; min-height: 40px;
+}
+#btn-cat img { height: 28px; width: auto; display: block; }
+#btn-cat.actif { background: var(--jaune); color: #222; border-color: var(--jaune); }
 .desc { border-bottom: 1px solid var(--carte2); padding-bottom: 10px; margin: 4px 0 0; }
 .detail .desc { border-bottom-color: rgba(255, 255, 255, .22); }
 .rond-wrap { position: relative; width: 100%; max-width: 110px; margin: 0 auto; }
 .rond-wrap .rond { max-width: none; margin: 0; }
-.prest { position: absolute; right: -4px; bottom: -4px; width: 38%; max-width: 40px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.prest { position: absolute; right: -3px; bottom: -3px; width: 24%; max-width: 26px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
 .prest img { width: 100%; height: auto; display: block; }
 .bandeau-grand { display: inline-flex; align-items: center; gap: 8px; }
 .bandeau-grand img { height: 1.4em; width: auto; }
-.onglets button img { height: 30px; width: auto; display: block; margin: 0 auto; }
 .buf-g { filter: drop-shadow(0 0 2px #3ddc84) drop-shadow(0 0 2px #3ddc84); }
 .buf-s { filter: drop-shadow(0 0 2px #ffc928) drop-shadow(0 0 2px #ffc928); }
 .buf-h { filter: drop-shadow(0 0 2px #c06bff) drop-shadow(0 0 2px #c06bff); }
@@ -306,29 +305,15 @@ pre { white-space: pre-wrap; word-break: break-all; }
       </section>
 
       <!-- 4. Brawlers -->
-      <nav class="onglets" id="onglets">
-        <button data-onglet="liste" class="actif">🎮 Mes brawlers</button>
-        <button data-onglet="catalogue" id="onglet-catalogue" title="Catalogue" aria-label="Catalogue"></button>
-      </nav>
-
-      <div id="vue-liste">
-        <section class="carte">
-          <div class="entete-brawlers">
-            <h2>Brawlers <span id="compteur"></span></h2>
-            <div class="barre"><div id="barre-remplie"></div></div>
-          </div>
-          <p class="note cache" id="info-rarete"></p>
-          <div id="groupes"></div>
-        </section>
-      </div>
-
-      <div id="vue-catalogue" class="cache">
-        <section class="carte">
-          <h2>Catalogue <span id="compteur-cat" style="color:var(--jaune)"></span></h2>
-          <p class="note">Tous les brawlers du jeu avec leur modèle. Touche un brawler pour voir ses gadgets, pouvoirs stellaires, équipements.</p>
-          <div id="catalogue"></div>
-        </section>
-      </div>
+      <section class="carte">
+        <div class="entete-brawlers">
+          <h2>Brawlers <span id="compteur"></span></h2>
+          <button id="btn-cat" title="Catalogue" aria-label="Catalogue"></button>
+        </div>
+        <p class="note cache" id="info-rarete"></p>
+        <div id="vue-liste"><div id="groupes"></div></div>
+        <div id="vue-catalogue" class="cache"><div id="catalogue"></div></div>
+      </section>
     </div>
 
     <!-- Détail d'un brawler -->
@@ -339,7 +324,8 @@ pre { white-space: pre-wrap; word-break: break-all; }
 
   <script>
 const URL_GOOGLE = "https://script.google.com/macros/s/AKfycbzo32S-q5NS_qMPuH9daIQmMiC6APMZfnvUcq7PhEfoh0gNgup3iyqKYtNfEu5Dn6IVCw/exec";
-const URLS_BRAWLIFY = ["https://api.brawlify.com/v1/brawlers", "https://api.brawlapi.com/v1/brawlers"];
+// api.brawlapi.com est la nouvelle adresse officielle de BrawlAPI ; l'ancienne api.brawlify.com sert de secours
+const URLS_BRAWLIFY = ["https://api.brawlapi.com/v1/brawlers", "https://api.brawlify.com/v1/brawlers"];
 const CDN = "https://cdn.brawlify.com/";
 
 // Emojis provisoires (utilisés quand une image n'existe pas, ex. hypercharge)
@@ -507,7 +493,6 @@ function erreurChargement(msg) {
 }
 
 document.getElementById("chg-logo").innerHTML = persoHtml("BS_EN.png", "", "Brawl Stars");
-document.getElementById("onglet-catalogue").innerHTML = persoHtml("Catalog.webp", "", "Catalogue");
 document.getElementById("btn-son").addEventListener("click", basculerSon);
 {
   const fav = new Image();
@@ -677,8 +662,6 @@ function fusionner(joueur, jeu, extra) {
   };
   const n = tous.filter(b => b.possede).length;
   document.getElementById("compteur").textContent = n + " / " + tous.length;
-  document.getElementById("compteur-cat").textContent = n + " / " + tous.length;
-  document.getElementById("barre-remplie").style.width = (tous.length ? (n / tous.length) * 100 : 0) + "%";
 }
 
 /* ---------- Bannière : 15 emojis par ligne ---------- */
@@ -712,12 +695,10 @@ function afficherStats(j) {
   const somme = cle => mien.reduce((t, b) => t + b[cle].length, 0);
   const sur = total => total ? " / " + total : "";
   const meilleur = mien.slice().sort((a, b) => b.record - a.record)[0];
-  const totalRecords = mien.reduce((s, b) => s + b.record, 0);
   const serie = mien.filter(b => b.serieMax != null && b.serieMax > 0).sort((a, b) => b.serieMax - a.serieMax)[0];
   const stats = [
     ["🏆", fmt(j.trophies), "Trophées"],
     ["🥇", fmt(j.highestTrophies), "Record"],
-    ["📈", fmt(totalRecords), "Total des records"],
   ];
   if (meilleur) stats.push(["👑", fmt(meilleur.record), "Record · " + esc(meilleur.nom)]);
   if (serie) stats.push(["⚡", serie.serieMax, "Série max · " + esc(serie.nom)]);
@@ -852,9 +833,9 @@ function ouvrirDetail(id) {
       ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
       ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-h", ""), "Buffie hypercharge", buf.hyperCharge) +
       "<h3>" + ICONES.gadget + " Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
-        objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, BASE_OBJETS.gadget, "Aucun gadget") +
+        objetsHtml(c.gadgets, b.gadgets, imgGadgetBord, imgGadget, BASE_OBJETS.gadget, "Aucun gadget") +
       "<h3>" + ICONES.starPower + " Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
-        objetsHtml(c.starPowers, b.starPowers, imgStar, imgStarBord, BASE_OBJETS.starPower, "Aucun pouvoir stellaire") +
+        objetsHtml(c.starPowers, b.starPowers, imgStarBord, imgStar, BASE_OBJETS.starPower, "Aucun pouvoir stellaire") +
       "<h3>" + ICONES.gear + " Équipements " + b.gears.length + (b.max.gears ? " / " + b.max.gears : "") + "</h3>" +
         objetsHtml(c.gears, b.gears, imgGear, null, BASE_OBJETS.gear, "Aucun équipement") +
     "</div>";
@@ -864,6 +845,19 @@ function ouvrirDetail(id) {
 }
 
 /* ---------- Navigation ---------- */
+function majBoutonCat() {
+  const b = document.getElementById("btn-cat");
+  if (ongletCourant === "catalogue") {
+    b.innerHTML = "← Brawlers";
+    b.title = "Retour aux brawlers";
+    b.classList.add("actif");
+  } else {
+    b.innerHTML = persoHtml("Catalog.webp", "", "Catalogue");
+    b.title = "Catalogue";
+    b.classList.remove("actif");
+  }
+}
+
 function montrer(vue) {
   document.getElementById("accueil").classList.toggle("cache", vue === "detail");
   document.getElementById("vue-detail").classList.toggle("cache", vue !== "detail");
@@ -871,18 +865,14 @@ function montrer(vue) {
     ongletCourant = vue;
     document.getElementById("vue-liste").classList.toggle("cache", vue !== "liste");
     document.getElementById("vue-catalogue").classList.toggle("cache", vue !== "catalogue");
+    majBoutonCat();
   }
-  document.querySelectorAll("#onglets button").forEach(x =>
-    x.classList.toggle("actif", x.dataset.onglet === (vue === "detail" ? ongletPrecedent : vue)));
 }
 
 /* ---------- Événements ---------- */
-document.getElementById("onglets").addEventListener("click", e => {
-  const bt = e.target.closest("button[data-onglet]");
-  if (!bt) return;
-  const o = bt.dataset.onglet;
-  if (o === "catalogue") afficherCatalogue();
-  montrer(o);
+document.getElementById("btn-cat").addEventListener("click", () => {
+  if (ongletCourant === "catalogue") montrer("liste");
+  else { afficherCatalogue(); montrer("catalogue"); }
 });
 document.getElementById("groupes").addEventListener("click", e => {
   const c = e.target.closest(".brawler[data-id]");
@@ -900,6 +890,7 @@ document.getElementById("detail").addEventListener("click", e => {
   if (e.target.id === "btn-retour") montrer(ongletPrecedent);
 });
 
+majBoutonCat();
 charger();
   </script>
 </body>
