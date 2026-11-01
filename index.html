@@ -320,7 +320,6 @@ pre { white-space: pre-wrap; word-break: break-all; }
       <!-- 5. Récompense quotidienne -->
       <section class="carte" id="recompense">
         <div class="entete-brawlers"><h2>Récompense quotidienne gratuite</h2></div>
-        <p class="note">La boutique officielle Supercell ne peut pas être affichée dans cette page (elle l'interdit) : le bouton l'ouvre dans un nouvel onglet.</p>
         <a class="lien-boutique" href="https://store.supercell.com/fr/brawlstars" target="_blank" rel="noopener noreferrer">Ouvrir la boutique Brawl Stars</a>
       </section>
     </div>
@@ -801,7 +800,8 @@ function statsLignes(b) {
   const niv = b.possede ? Math.min(Math.max(b.puissance || 1, 1), 11) : 11;
   const k = 1 + 0.05 * (niv - 1);
   const dg = d => d ? fmt(Math.round(d[0] * k)) + (d[1] > 1 ? " × " + d[1] : "") : "—";
-  let h = '<div class="ligne"><span>PV (pouvoir ' + niv + ')</span><b>' + fmt(Math.round(s[0] * k)) + "</b></div>" +
+  let h = '<div class="ligne"><span>Pouvoir</span><b>' + niv + "</b></div>" +
+    '<div class="ligne"><span>PV</span><b>' + fmt(Math.round(s[0] * k)) + "</b></div>" +
     '<div class="ligne"><span>Vitesse</span><b>' + fmt(s[1]) + "</b></div>";
   if (s[2]) h += '<div class="ligne"><span>Dégâts attaque</span><b>' + dg(s[2]) + "</b></div>";
   if (s[3]) h += '<div class="ligne"><span>Dégâts super</span><b>' + dg(s[3]) + "</b></div>";
@@ -844,8 +844,7 @@ function ouvrirDetail(id) {
       statsLignes(b) +
       (b.description ? '<div class="ligne sans-barre"><span>Description</span></div><p class="desc">' + esc(b.description) + "</p>" : "") +
       (b.possede
-        ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
-          '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
+        ? '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
           ligneTexte(persoHtml(b.tier.f, "mini", ""), "Prestige", esc(b.tier.nom)) +
           '<div class="ligne"><span>Série de victoires actuelle</span><b>' + (b.serie != null ? b.serie : "—") + "</b></div>" +
