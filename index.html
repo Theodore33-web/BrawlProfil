@@ -304,6 +304,11 @@ const ICONES = {
 const IMG_HYPERCHARGE = "";
 if (IMG_HYPERCHARGE) ICONES.hypercharge = '<img class="ico" src="' + IMG_HYPERCHARGE + '" alt="">';
 
+// PV et dégâts : aucune API ne les fournit. Remplis par id de brawler, par exemple :
+//   16000000: { pv: 5600, degats: 1680 },   (Shelly)
+// Les valeurs changent à chaque équilibrage et selon le niveau de pouvoir.
+const STATS = {};
+
 // Raretés : ordre d'affichage, nom français, couleur
 const RARETES = [
   { cle: "depart", nom: "Départ", couleur: "#9aa7b5" },
@@ -599,20 +604,15 @@ function badgesHtml(b) {
     "</div>";
 }
 
-function afficherGroupes() {
+function trierParRarete(liste) {
   const ordre = RARETES.concat([INCONNUE]);
-  let html = "";
-  ordre.forEach(r => {
-    const liste = tous.filter(b => b.rarete.cle === r.cle);
-    if (!liste.length) return;
-    liste.sort((a, b) => a.id - b.id);
-    const totalR = tous.filter(b => b.rarete.cle === r.cle);
-    const possR = totalR.filter(b => b.possede).length;
-    html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
-      '<div class="bandeau-rarete"><span>' + r.nom + "</span><span>" + possR + " / " + totalR.length + "</span></div>" +
-      '<div class="grille">' + liste.map(carteHtml).join("") + "</div></div>";
-  });
-  document.getElementById("groupes").innerHTML = html;
+  const rang = b => ordre.findIndex(r => r.cle === b.rarete.cle);
+  return liste.slice().sort((a, b) => rang(a) - rang(b) || a.id - b.id);
+}
+
+function afficherGroupes() {
+  document.getElementById("groupes").innerHTML =
+    '<div class="grille">' + trierParRarete(tous).map(carteHtml).join("") + "</div>";
 }
 
 function roleHtml(b) {
@@ -622,10 +622,10 @@ function roleHtml(b) {
 function carteHtml(b) {
   const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
   if (!b.possede) {
-    return '<div class="brawler manquant">' + img +
+    return '<div class="brawler manquant" style="--couleur:' + b.rarete.couleur + '">' + img +
       '<div class="nom">' + esc(b.nom) + '</div>' + roleHtml(b) + '<div class="etat">🔒 Non possédé</div></div>';
   }
-  return '<div class="brawler" data-id="' + b.id + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
+  return '<div class="brawler" data-id="' + b.id + '" style="--couleur:' + b.rarete.couleur + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
     '<div class="nom">' + esc(b.nom) + "</div>" + roleHtml(b) +
     '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
     '<div class="info">Record ' + fmt(b.record) + "</div>" +
@@ -638,21 +638,12 @@ function carteHtml(b) {
 
 /* ---------- Catalogue ---------- */
 function afficherCatalogue() {
-  const ordre = RARETES.concat([INCONNUE]);
-  let html = "";
-  ordre.forEach(r => {
-    const liste = tous.filter(b => b.rarete.cle === r.cle).sort((a, b) => a.id - b.id);
-    if (!liste.length) return;
-    html += '<div class="groupe" style="--couleur:' + r.couleur + '">' +
-      '<div class="bandeau-rarete"><span>' + r.nom + "</span><span>" + liste.length + "</span></div>" +
-      '<div class="grille-cat">' + liste.map(b => {
-        const sous = esc(b.classe || (b.possede ? "Possédé" : "Non possédé"));
-        return '<div class="tuile-cat' + (b.possede ? "" : " absent") + '" data-id="' + b.id + '">' +
-          '<div class="vitrine"><img src="' + imgModele(b.id) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
-          '<div class="nom">' + esc(b.nom) + '</div><div class="sous">' + sous + "</div></div>";
-      }).join("") + "</div></div>";
-  });
-  document.getElementById("catalogue").innerHTML = html;
+  document.getElementById("catalogue").innerHTML = '<div class="grille-cat">' + trierParRarete(tous).map(b => {
+    const sous = esc(b.classe || (b.possede ? "Possédé" : "Non possédé"));
+    return '<div class="tuile-cat' + (b.possede ? "" : " absent") + '" data-id="' + b.id + '" style="--couleur:' + b.rarete.couleur + '">' +
+      '<div class="vitrine"><img src="' + imgModele(b.id) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
+      '<div class="nom">' + esc(b.nom) + '</div><div class="sous">' + sous + "</div></div>";
+  }).join("") + "</div>";
 }
 
 /* ---------- Vue détail ---------- */
@@ -703,6 +694,8 @@ function ouvrirDetail(id) {
       '<div class="ligne"><span>Rareté</span><b>' + esc(b.rarete.nom) + "</b></div>" +
       (b.classe ? '<div class="ligne"><span>Rôle</span><b>' + esc(b.classe) + "</b></div>" : "") +
       (b.description ? '<p class="desc">' + esc(b.description) + "</p>" : "") +
+      '<div class="ligne"><span>❤️ PV</span><b>' + (STATS[b.id] && STATS[b.id].pv != null ? fmt(STATS[b.id].pv) : "—") + "</b></div>" +
+      '<div class="ligne"><span>💥 Dégâts</span><b>' + (STATS[b.id] && STATS[b.id].degats != null ? fmt(STATS[b.id].degats) : "—") + "</b></div>" +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
           '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
