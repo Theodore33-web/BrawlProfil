@@ -239,11 +239,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .buf-s { filter: drop-shadow(0 0 2px #ffc928) drop-shadow(0 0 2px #ffc928); }
 .buf-h { filter: drop-shadow(0 0 2px #c06bff) drop-shadow(0 0 2px #c06bff); }
 .badges .ico { height: 1.3em; }
-button.pastille { border: 0; font: inherit; color: inherit; cursor: pointer; }
-.pastille.pass .ico-pass { height: 1.5em; width: auto; vertical-align: middle; margin-right: 4px; }
-.pastille.pass.on { background: #5a3b00; box-shadow: 0 0 0 1px var(--jaune) inset; }
-.pastille.pass b { color: var(--jaune); }
-.pastille.pass small { color: var(--discret); }
+
 
 /* cartes compactes : 3 brawlers par ligne */
 .brawler { padding: 8px 4px; border-radius: 12px; min-width: 0; }
@@ -423,6 +419,12 @@ ICONES.hypercharge = persoHtml("Empty-Hypercharge.webp", "ico", "Hypercharge");
 ICONES.buffieGadget = persoHtml("Icon-Buffie.webp", "ico buf-g", "Buffie gadget");
 ICONES.buffieStarPower = persoHtml("Icon-Buffie.webp", "ico buf-s", "Buffie pouvoir stellaire");
 ICONES.buffieHyperCharge = persoHtml("Icon-Buffie.webp", "ico buf-h", "Buffie hypercharge");
+
+// Gadgets, pouvoirs stellaires, équipements : images fournies à la place des emojis
+const BASE_OBJETS = { gadget: "gadget_base_empty.png", starPower: "starpower_base01_empty.png", gear: "gear_base_empty.png" };
+ICONES.gadget = persoHtml(BASE_OBJETS.gadget, "ico", "Gadget");
+ICONES.starPower = persoHtml(BASE_OBJETS.starPower, "ico", "Pouvoir stellaire");
+ICONES.gear = persoHtml(BASE_OBJETS.gear, "ico", "Équipement");
 
 // Petite image par rareté (Départ et inconnue : symbole Brawl Stars)
 const ICONE_RARETE = {
@@ -672,33 +674,14 @@ function afficherBanniere() {
 }
 
 /* ---------- Profil + stats ---------- */
-let joueurCourant = null;
-
-// Brawl Pass Plus : l'API officielle ne le donne pas. On lit un champ s'il existe, sinon réglage manuel.
-function lirePass(j) {
-  for (const k of ["brawlPassPlus", "hasBrawlPassPlus", "isBrawlPassPlus", "passPlus"]) {
-    if (typeof j[k] === "boolean") return { val: j[k], auto: true };
-  }
-  if (j.brawlPass && typeof j.brawlPass.plus === "boolean") return { val: j.brawlPass.plus, auto: true };
-  let v = false;
-  try { v = localStorage.getItem("passPlus") === "1"; } catch (e) {}
-  return { val: v, auto: false };
-}
-
 function afficherProfil(j) {
-  joueurCourant = j;
   const icone = j.icon ? imgIcone(j.icon.id) : SYMBOLE;
   const club = j.club && j.club.name ? j.club.name : "Aucun club";
-  const pass = lirePass(j);
   document.getElementById("profil").innerHTML =
     imgTag([icone], "avatar", "") +
     "<div><h1>" + esc(j.name) + '</h1><p class="tag">' + esc(j.tag) + "</p>" +
     '<span class="pastille niveau">Niveau ' + esc(j.expLevel) + "</span>" +
-    '<span class="pastille">🛡️ ' + esc(club) + "</span>" +
-    '<button class="pastille pass' + (pass.val ? " on" : "") + '" id="btn-pass" title="' +
-      (pass.auto ? "Donnée fournie par l\\'API" : "Non fourni par l\\'API : touche pour régler (à refaire à chaque saison)") + '">' +
-      persoHtml("icon_brawl_pass_plus.png", "ico-pass", "Brawl Pass Plus") +
-      "Brawl Pass Plus : <b>" + (pass.val ? "Oui" : "Non") + "</b>" + (pass.auto ? "" : " <small>(manuel)</small>") + "</button></div>";
+    '<span class="pastille">🛡️ ' + esc(club) + "</span></div>";
 }
 
 function afficherStats(j) {
@@ -783,11 +766,11 @@ function afficherCatalogue() {
 }
 
 /* ---------- Vue détail ---------- */
-function objetsHtml(liste, possedes, urlImg, urlSecours, emoji, vide) {
+function objetsHtml(liste, possedes, urlImg, urlSecours, base, vide) {
   if (!liste.length) return '<p class="vide">' + vide + "</p>";
   const ids = new Set(possedes.map(x => x.id));
   return liste.map(x =>
-    ligneIcone(miniImg([urlImg(x.id)].concat(urlSecours ? [urlSecours(x.id)] : []), emoji), esc(x.name), ids.has(x.id))
+    ligneIcone(miniImg([urlImg(x.id)].concat(urlSecours ? [urlSecours(x.id)] : []).concat([imgPerso(base), imgPersoRaw(base)])), esc(x.name), ids.has(x.id))
   ).join("");
 }
 
@@ -819,7 +802,6 @@ function ouvrirDetail(id) {
     '<div class="col-gauche">' +
       '<button class="retour" id="btn-retour" title="Retour">←</button>' +
       "<h1>" + esc(b.nom) + "</h1>" +
-      '<div class="bandeau-grand">' + iconeRarete(b, "") + "<span>" + esc(b.rarete.nom) + "</span></div>" +
     "</div>" +
     // milieu
     '<div class="col-milieu">' +
@@ -830,7 +812,7 @@ function ouvrirDetail(id) {
       "<h3>Caractéristiques</h3>" +
       ligneTexte(iconeRarete(b, "mini"), "Rareté", esc(b.rarete.nom)) +
       (b.classe ? '<div class="ligne"><span>Rôle</span><b>' + esc(b.classe) + "</b></div>" : "") +
-      (b.description ? '<p class="desc">' + esc(b.description) + "</p>" : "") +
+      (b.description ? '<div class="ligne"><span>Description</span></div><p class="desc">' + esc(b.description) + "</p>" : "") +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
           '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
@@ -843,12 +825,12 @@ function ouvrirDetail(id) {
       ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-g", ""), "Buffie gadget", buf.gadget) +
       ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
       ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-h", ""), "Buffie hypercharge", buf.hyperCharge) +
-      "<h3>🔧 Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
-        objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, ICONES.gadget, "Aucun gadget") +
-      "<h3>⭐ Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
-        objetsHtml(c.starPowers, b.starPowers, imgStar, imgStarBord, ICONES.starPower, "Aucun pouvoir stellaire") +
-      "<h3>⚙️ Équipements " + b.gears.length + (b.max.gears ? " / " + b.max.gears : "") + "</h3>" +
-        objetsHtml(c.gears, b.gears, imgGear, null, ICONES.gear, "Aucun équipement") +
+      "<h3>" + ICONES.gadget + " Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
+        objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, BASE_OBJETS.gadget, "Aucun gadget") +
+      "<h3>" + ICONES.starPower + " Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
+        objetsHtml(c.starPowers, b.starPowers, imgStar, imgStarBord, BASE_OBJETS.starPower, "Aucun pouvoir stellaire") +
+      "<h3>" + ICONES.gear + " Équipements " + b.gears.length + (b.max.gears ? " / " + b.max.gears : "") + "</h3>" +
+        objetsHtml(c.gears, b.gears, imgGear, null, BASE_OBJETS.gear, "Aucun équipement") +
     "</div>";
 
   montrer("detail");
@@ -887,13 +869,6 @@ document.getElementById("catalogue").addEventListener("click", e => {
 document.getElementById("banniere").addEventListener("click", e => {
   const i = e.target.closest(".cell.possede");
   if (i) ouvrirDetail(i.dataset.id);
-});
-document.getElementById("profil").addEventListener("click", e => {
-  if (!e.target.closest("#btn-pass") || !joueurCourant) return;
-  const pass = lirePass(joueurCourant);
-  if (pass.auto) return;
-  try { localStorage.setItem("passPlus", pass.val ? "0" : "1"); } catch (x) {}
-  afficherProfil(joueurCourant);
 });
 document.getElementById("detail").addEventListener("click", e => {
   if (e.target.id === "btn-retour") montrer(ongletPrecedent);
