@@ -232,6 +232,13 @@ pre { white-space: pre-wrap; word-break: break-all; }
 /* ---------- Images perso, rareté, buffies ---------- */
 .rar { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; z-index: 2; }
 .rar img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ligne.sans-barre { border-bottom: 0; padding-bottom: 0; }
+.desc { border-bottom: 1px solid var(--carte2); padding-bottom: 10px; margin: 4px 0 0; }
+.detail .desc { border-bottom-color: rgba(255, 255, 255, .22); }
+.rond-wrap { position: relative; width: 100%; max-width: 110px; margin: 0 auto; }
+.rond-wrap .rond { max-width: none; margin: 0; }
+.prest { position: absolute; right: -4px; bottom: -4px; width: 38%; max-width: 40px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.prest img { width: 100%; height: auto; display: block; }
 .bandeau-grand { display: inline-flex; align-items: center; gap: 8px; }
 .bandeau-grand img { height: 1.4em; width: auto; }
 .onglets button img { height: 30px; width: auto; display: block; margin: 0 auto; }
@@ -426,6 +433,22 @@ ICONES.gadget = persoHtml(BASE_OBJETS.gadget, "ico", "Gadget");
 ICONES.starPower = persoHtml(BASE_OBJETS.starPower, "ico", "Pouvoir stellaire");
 ICONES.gear = persoHtml(BASE_OBJETS.gear, "ico", "Équipement");
 
+// Prestige : palier selon les trophées du brawler (images du dépôt)
+const PALIERS = [
+  { min: 0, nom: "Bois", f: "prestigebois.png" },
+  { min: 250, nom: "Bronze", f: "prestigebronze.png" },
+  { min: 500, nom: "Argent", f: "prestigeargent.png" },
+  { min: 750, nom: "Or", f: "prestigeor.png" },
+  { min: 1000, nom: "Prestige 1", f: "prestige1.png" },
+  { min: 2000, nom: "Prestige 2", f: "prestige2.png" },
+  { min: 3000, nom: "Prestige 3", f: "prestige3.png" },
+];
+function palierPrestige(trophees) {
+  let r = PALIERS[0];
+  PALIERS.forEach(x => { if (trophees >= x.min) r = x; });
+  return r;
+}
+
 // Petite image par rareté (Départ et inconnue : symbole Brawl Stars)
 const ICONE_RARETE = {
   rare: "Icon-Rare_Brawler.webp", superrare: "Icon-Super_Rare_Brawler.webp", epique: "Icon-Epic_Brawler.webp",
@@ -604,14 +627,7 @@ function lireBuffies(b) {
   return r;
 }
 
-function lirePrestige(p) {
-  let v = p.prestigeLevel;
-  if (v == null) v = p.prestige;
-  if (v == null) v = p.prestigeRank;
-  if (v == null) v = p.prestigeTier;
-  if (v && typeof v === "object") v = v.level != null ? v.level : (v.rank != null ? v.rank : v.tier);
-  return Number(v) || 0;
-}
+const numOuNull = v => (v === null || v === undefined || isNaN(Number(v))) ? null : Number(v);
 
 function fusionner(joueur, jeu, extra) {
   const possedes = {};
@@ -644,7 +660,10 @@ function fusionner(joueur, jeu, extra) {
       hyper: p ? aHypercharge(p) : false,
       buffies: p ? lireBuffies(p) : { gadget: false, starPower: false, hyperCharge: false },
       brut: p || null,
-      prestige: p ? lirePrestige(p) : 0,
+      tier: p ? palierPrestige(Number(p.trophies) || 0) : null,
+      serie: p ? numOuNull(p.currentWinStreak != null ? p.currentWinStreak : p.current_win_streak) : null,
+      serieMax: p ? numOuNull(p.maxWinStreak != null ? p.maxWinStreak : p.max_win_streak) : null,
+      skinNom: p && p.skin ? (nomDe(p.skin) || "") : "",
       catalogue: cat,
       max: { starPowers: cat.starPowers.length, gadgets: cat.gadgets.length, gears: cat.gears.length },
     };
@@ -692,10 +711,17 @@ function afficherStats(j) {
   const nbBh = mien.filter(b => b.buffies.hyperCharge).length;
   const somme = cle => mien.reduce((t, b) => t + b[cle].length, 0);
   const sur = total => total ? " / " + total : "";
-  const prestiges = mien.filter(b => b.prestige > 0);
+  const meilleur = mien.slice().sort((a, b) => b.record - a.record)[0];
+  const totalRecords = mien.reduce((s, b) => s + b.record, 0);
+  const serie = mien.filter(b => b.serieMax != null && b.serieMax > 0).sort((a, b) => b.serieMax - a.serieMax)[0];
   const stats = [
     ["🏆", fmt(j.trophies), "Trophées"],
     ["🥇", fmt(j.highestTrophies), "Record"],
+    ["📈", fmt(totalRecords), "Total des records"],
+  ];
+  if (meilleur) stats.push(["👑", fmt(meilleur.record), "Record · " + esc(meilleur.nom)]);
+  if (serie) stats.push(["⚡", serie.serieMax, "Série max · " + esc(serie.nom)]);
+  stats.push(
     ["⚔️", fmt(j["3vs3Victories"]), "Victoires 3c3"],
     ["🎯", fmt(j.soloVictories), "Victoires solo"],
     ["👥", fmt(j.duoVictories), "Victoires duo"],
@@ -706,12 +732,8 @@ function afficherStats(j) {
     [ICONES.hypercharge, nbHyper + " / " + mien.length, "Hypercharges"],
     [ICONES.buffieGadget, nbBg + " / " + mien.length, "Buffies gadget"],
     [ICONES.buffieStarPower, nbBs + " / " + mien.length, "Buffies pouvoir stellaire"],
-    [ICONES.buffieHyperCharge, nbBh + " / " + mien.length, "Buffies hypercharge"],
-  ];
-  if (prestiges.length) {
-    stats.push([ICONES.prestige, prestiges.length + " / " + mien.length, "Brawlers prestige"]);
-    stats.push([ICONES.prestige, Math.max.apply(null, prestiges.map(b => b.prestige)), "Prestige max"]);
-  }
+    [ICONES.buffieHyperCharge, nbBh + " / " + mien.length, "Buffies hypercharge"]
+  );
   document.getElementById("stats").innerHTML = stats
     .map(s => '<div class="stat"><b>' + s[0] + " " + s[1] + "</b><span>" + s[2] + "</span></div>")
     .join("");
@@ -741,7 +763,9 @@ function afficherGroupes() {
 }
 
 function carteHtml(b) {
-  const img = '<div class="rond">' + imgTag([imgBrawler(b.id)], "", "") + '</div><span class="rar">' + iconeRarete(b, "") + "</span>";
+  const img = '<div class="rond-wrap"><div class="rond">' + imgTag([imgBrawler(b.id)], "", "") + "</div>" +
+    (b.tier ? '<span class="prest" title="' + esc(b.tier.nom) + '">' + persoHtml(b.tier.f, "", b.tier.nom) + "</span>" : "") +
+    '</div><span class="rar">' + iconeRarete(b, "") + "</span>";
   if (!b.possede) {
     return '<div class="brawler manquant" style="--couleur:' + b.rarete.couleur + '">' + img +
       '<div class="nom">' + esc(b.nom) + '</div><div class="etat">🔒 Non possédé</div></div>';
@@ -812,12 +836,14 @@ function ouvrirDetail(id) {
       "<h3>Caractéristiques</h3>" +
       ligneTexte(iconeRarete(b, "mini"), "Rareté", esc(b.rarete.nom)) +
       (b.classe ? '<div class="ligne"><span>Rôle</span><b>' + esc(b.classe) + "</b></div>" : "") +
-      (b.description ? '<div class="ligne"><span>Description</span></div><p class="desc">' + esc(b.description) + "</p>" : "") +
+      (b.description ? '<div class="ligne sans-barre"><span>Description</span></div><p class="desc">' + esc(b.description) + "</p>" : "") +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
           '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
-          '<div class="ligne"><span>' + ICONES.prestige + ' Prestige actuel</span><b>' + (b.prestige || "—") + "</b></div>"
+          ligneTexte(persoHtml(b.tier.f, "mini", ""), "Prestige", esc(b.tier.nom)) +
+          '<div class="ligne"><span>Série de victoires actuelle</span><b>' + (b.serie != null ? b.serie : "—") + "</b></div>" +
+          (b.skinNom ? '<div class="ligne"><span>Skin équipé</span><b>' + esc(b.skinNom) + "</b></div>" : "")
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
       "<h3>Hypercharge</h3>" +
       ligneIcone(persoHtml("Empty-Hypercharge.webp", "mini", ""), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
