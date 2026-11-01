@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Profil Brawl Stars</title>
+  <link rel="icon" type="image/png" id="favicon" href="logobs.png">
+  <link rel="apple-touch-icon" href="logobs.png">
   <style>
 :root {
   --fond: #0b0d1a;
@@ -202,6 +204,47 @@ h2 { margin: 0; font-size: 1.3rem; }
 details { margin-top: 14px; font-size: .75rem; color: var(--discret); }
 pre { white-space: pre-wrap; word-break: break-all; }
 
+/* ---------- Page de chargement ---------- */
+#chargement {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(160deg, #1d1040 0%, #0b0d1a 55%, #08232f 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .6s;
+}
+#chargement.fini { opacity: 0; pointer-events: none; }
+#chg-logo img { width: min(72vw, 420px); height: auto; display: block; animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+.chg-barre { width: min(60vw, 300px); height: 10px; border-radius: 99px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.chg-barre i { display: block; height: 100%; width: 40%; border-radius: 99px; background: linear-gradient(90deg, var(--bleu), var(--vert)); animation: glisse 1.1s ease-in-out infinite; }
+.chg-barre.stop i { animation: none; background: var(--rouge); width: 100%; }
+@keyframes glisse { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+#chg-texte { color: var(--discret); font-size: .95rem; text-align: center; padding: 0 16px; }
+#chg-retry {
+  background: var(--jaune); color: #222; border: 0; border-radius: 12px; padding: 10px 20px;
+  font: inherit; font-weight: bold; cursor: pointer;
+}
+#btn-son {
+  position: fixed; right: 12px; bottom: 12px; z-index: 10000; width: 42px; height: 42px; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(21, 26, 51, .85); color: var(--texte);
+  font-size: 1.2rem; cursor: pointer;
+}
+
+/* ---------- Images perso, rareté, buffies ---------- */
+.rar { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; z-index: 2; }
+.rar img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bandeau-grand { display: inline-flex; align-items: center; gap: 8px; }
+.bandeau-grand img { height: 1.4em; width: auto; }
+.onglets button img { height: 30px; width: auto; display: block; margin: 0 auto; }
+.buf-g { filter: drop-shadow(0 0 2px #3ddc84) drop-shadow(0 0 2px #3ddc84); }
+.buf-s { filter: drop-shadow(0 0 2px #ffc928) drop-shadow(0 0 2px #ffc928); }
+.buf-h { filter: drop-shadow(0 0 2px #c06bff) drop-shadow(0 0 2px #c06bff); }
+.badges .ico { height: 1.3em; }
+button.pastille { border: 0; font: inherit; color: inherit; cursor: pointer; }
+.pastille.pass .ico-pass { height: 1.5em; width: auto; vertical-align: middle; margin-right: 4px; }
+.pastille.pass.on { background: #5a3b00; box-shadow: 0 0 0 1px var(--jaune) inset; }
+.pastille.pass b { color: var(--jaune); }
+.pastille.pass small { color: var(--discret); }
+
 /* cartes compactes : 3 brawlers par ligne */
 .brawler { padding: 8px 4px; border-radius: 12px; min-width: 0; }
 .brawler .nom { font-size: .8rem; margin: 4px 0 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -235,6 +278,14 @@ pre { white-space: pre-wrap; word-break: break-all; }
   </style>
 </head>
 <body>
+  <!-- Page de chargement -->
+  <div id="chargement">
+    <div id="chg-logo"></div>
+    <div class="chg-barre" id="chg-barre"><i></i></div>
+    <div id="chg-texte">Chargement…</div>
+    <button id="chg-retry" class="cache" onclick="location.reload()">Réessayer</button>
+  </div>
+  <button id="btn-son" class="cache" title="Son">🔊</button>
   <main>
     <div id="accueil">
       <!-- 1. Profil -->
@@ -254,7 +305,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
       <!-- 4. Brawlers -->
       <nav class="onglets" id="onglets">
         <button data-onglet="liste" class="actif">🎮 Mes brawlers</button>
-        <button data-onglet="catalogue">📚 Catalogue</button>
+        <button data-onglet="catalogue" id="onglet-catalogue" title="Catalogue" aria-label="Catalogue"></button>
       </nav>
 
       <div id="vue-liste">
@@ -300,15 +351,6 @@ const ICONES = {
   gear: "⚙️",
 };
 
-// Image d'hypercharge : colle ici l'URL d'une image si tu en trouves une (sinon emoji)
-const IMG_HYPERCHARGE = "";
-if (IMG_HYPERCHARGE) ICONES.hypercharge = '<img class="ico" src="' + IMG_HYPERCHARGE + '" alt="">';
-
-// PV et dégâts : aucune API ne les fournit. Remplis par id de brawler, par exemple :
-//   16000000: { pv: 5600, degats: 1680 },   (Shelly)
-// Les valeurs changent à chaque équilibrage et selon le niveau de pouvoir.
-const STATS = {};
-
 // Raretés : ordre d'affichage, nom français, couleur
 const RARETES = [
   { cle: "depart", nom: "Départ", couleur: "#9aa7b5" },
@@ -350,31 +392,104 @@ const imgStarBord = id => CDN + "star-powers/regular/" + id + ".png";
 const imgGear = id => CDN + "gears/regular/" + id + ".png";
 const imgPrestige = (id, n) => CDN + "prestiges/brawlers/" + id + "/" + n + ".png";
 
-// onerror : essaie une image de secours, sinon affiche l'emoji
-function repli(el, secours, emoji) {
-  if (secours && !el.dataset.r) { el.dataset.r = "1"; el.src = secours; return; }
-  const d = document.createElement("div");
-  d.className = "pas-img";
-  d.textContent = emoji || "❔";
-  el.replaceWith(d);
-}
-window.repli = repli;
+/* ---------- Images perso (dépôt GitHub) avec chaîne de secours ---------- */
+const DOSSIER = "Brawl%20Stars%20Image/";
+const DOSSIER_RAW = "https://raw.githubusercontent.com/Theodore33-web/BrawlProfil/main/Brawl%20Stars%20Image/";
+const imgPerso = nom => DOSSIER + encodeURIComponent(nom);
+const imgPersoRaw = nom => DOSSIER_RAW + encodeURIComponent(nom);
+const SYMBOLE = imgPerso("BS_Symbol.png");
+const SYMBOLE_RAW = imgPersoRaw("BS_Symbol.png");
 
-// onerror en chaîne : data-c = liste JSON d'images de secours, data-e = emoji final
+// onerror : image suivante de data-c ; en dernier recours le symbole Brawl Stars
 function chaine(el) {
   let l = [];
   try { l = JSON.parse(el.dataset.c || "[]"); } catch (e) {}
-  if (l.length) { const suivante = l.shift(); el.dataset.c = JSON.stringify(l); el.src = suivante; return; }
-  if (el.dataset.e) {
-    const d = document.createElement("div");
-    d.className = "pas-img";
-    d.textContent = el.dataset.e;
-    el.replaceWith(d);
-  } else {
-    el.style.visibility = "hidden";
-  }
+  if (l.length) { const s = l.shift(); el.dataset.c = JSON.stringify(l); el.src = s; return; }
+  if (!el.dataset.fin) { el.dataset.fin = "1"; el.dataset.c = JSON.stringify([SYMBOLE_RAW]); el.src = SYMBOLE; return; }
+  el.style.visibility = "hidden";
 }
 window.chaine = chaine;
+
+function imgTag(urls, cls, alt) {
+  const reste = urls.slice(1);
+  return "<img" + (cls ? ' class="' + cls + '"' : "") + ' src="' + urls[0] + '"' +
+    (reste.length ? " data-c='" + JSON.stringify(reste) + "'" : "") +
+    ' alt="' + esc(alt || "") + '" onerror="chaine(this)">';
+}
+const persoHtml = (nom, cls, alt) => imgTag([imgPerso(nom), imgPersoRaw(nom)], cls, alt);
+
+// Hypercharge et buffies : images fournies (les 3 buffies se distinguent par la lueur de couleur)
+ICONES.hypercharge = persoHtml("Empty-Hypercharge.webp", "ico", "Hypercharge");
+ICONES.buffieGadget = persoHtml("Icon-Buffie.webp", "ico buf-g", "Buffie gadget");
+ICONES.buffieStarPower = persoHtml("Icon-Buffie.webp", "ico buf-s", "Buffie pouvoir stellaire");
+ICONES.buffieHyperCharge = persoHtml("Icon-Buffie.webp", "ico buf-h", "Buffie hypercharge");
+
+// Petite image par rareté (Départ et inconnue : symbole Brawl Stars)
+const ICONE_RARETE = {
+  rare: "Icon-Rare_Brawler.webp", superrare: "Icon-Super_Rare_Brawler.webp", epique: "Icon-Epic_Brawler.webp",
+  mythique: "Icon-Mythic_Brawler.webp", legendaire: "Icon-Legendary_Brawler.webp", ultra: "Icon-Ultra_Brawler.webp",
+};
+const iconeRarete = (b, cls) => persoHtml(ICONE_RARETE[b.rarete.cle] || "BS_Symbol.png", cls, b.rarete.nom);
+
+/* ---------- Page de chargement + son ---------- */
+const SON = [DOSSIER + "brawl_pirate_menu_01.ogg", DOSSIER_RAW + "brawl_pirate_menu_01.ogg"];
+let audio = null;
+let sonCoupe = false;
+try { sonCoupe = localStorage.getItem("sonCoupe") === "1"; } catch (e) {}
+
+function majBoutonSon() {
+  const b = document.getElementById("btn-son");
+  b.textContent = sonCoupe ? "🔇" : "🔊";
+  b.title = sonCoupe ? "Remettre le son" : "Couper le son";
+}
+
+function jouerSon() {
+  if (sonCoupe) return;
+  document.getElementById("btn-son").classList.remove("cache");
+  majBoutonSon();
+  audio = new Audio(SON[0]);
+  audio.addEventListener("error", () => {
+    if (!audio.dataset.r) { audio.dataset.r = "1"; audio.src = SON[1]; audio.play().catch(() => {}); }
+  });
+  const essai = audio.play();
+  if (essai && essai.catch) essai.catch(() => {
+    // lecture automatique bloquée par le navigateur : on joue au premier toucher
+    const go = () => { if (audio && !sonCoupe) audio.play().catch(() => {}); };
+    document.addEventListener("pointerdown", go, { once: true });
+    document.addEventListener("keydown", go, { once: true });
+  });
+}
+
+function basculerSon() {
+  sonCoupe = !sonCoupe;
+  try { localStorage.setItem("sonCoupe", sonCoupe ? "1" : "0"); } catch (e) {}
+  if (sonCoupe) { if (audio) audio.pause(); }
+  else if (audio) { audio.play().catch(() => {}); }
+  else { jouerSon(); }
+  majBoutonSon();
+}
+
+function etape(texte) { document.getElementById("chg-texte").textContent = texte; }
+function finChargement() {
+  const el = document.getElementById("chargement");
+  el.classList.add("fini");
+  setTimeout(() => { if (el.remove) el.remove(); }, 700);
+}
+function erreurChargement(msg) {
+  etape(msg);
+  document.getElementById("chg-barre").classList.add("stop");
+  document.getElementById("chg-retry").classList.remove("cache");
+}
+
+document.getElementById("chg-logo").innerHTML = persoHtml("BS_EN.png", "", "Brawl Stars");
+document.getElementById("onglet-catalogue").innerHTML = persoHtml("Catalog.webp", "", "Catalogue");
+document.getElementById("btn-son").addEventListener("click", basculerSon);
+{
+  const fav = new Image();
+  fav.onerror = () => { document.getElementById("favicon").href = "https://raw.githubusercontent.com/Theodore33-web/BrawlProfil/main/logobs.png"; };
+  fav.src = "logobs.png";
+}
+jouerSon();
 
 let tous = [];
 let totaux = { starPowers: 0, gadgets: 0, gears: 0 };
@@ -428,9 +543,12 @@ async function chargerBrawlify() {
 }
 
 async function charger() {
+  const debut = Date.now();
   try {
-    const [r, extra] = await Promise.all([fetch(URL_GOOGLE), chargerBrawlify()]);
-    const d = await r.json();
+    etape("Connexion à Brawl Stars…");
+    const pProfil = fetch(URL_GOOGLE).then(r => { etape("Profil récupéré…"); return r.json(); });
+    const pExtra = chargerBrawlify().then(x => { etape("Raretés et rôles récupérés…"); return x; });
+    const [d, extra] = await Promise.all([pProfil, pExtra]);
     if (d.erreur) throw new Error(d.erreur);
     afficherProfil(d.player);
     fusionner(d.player, d.brawlers.items || [], extra.map);
@@ -439,8 +557,13 @@ async function charger() {
     afficherBanniere();
     afficherCatalogue();
     infoRarete(extra);
+    etape("C'est prêt !");
+    const reste = 900 - (Date.now() - debut);
+    if (reste > 0) await new Promise(ok => setTimeout(ok, reste));
+    finChargement();
   } catch (e) {
     document.getElementById("profil").innerHTML = '<p class="erreur">' + esc(e.message) + "</p>";
+    erreurChargement("Impossible de charger les données : " + e.message);
   }
 }
 
@@ -544,19 +667,38 @@ function afficherBanniere() {
   const liste = tous.slice().sort((a, b) => rang(a) - rang(b) || a.id - b.id);
   document.getElementById("banniere").innerHTML = liste.map(b =>
     '<div class="cell ' + (b.possede ? "possede" : "absent") + '" data-id="' + b.id + '" title="' + esc(b.nom) + '">' +
-    '<img src="' + imgEmoji(b.id) + '" alt="' + esc(b.nom) + '" onerror="this.style.visibility=\'hidden\'"></div>'
+    imgTag([imgEmoji(b.id)], "", b.nom) + "</div>"
   ).join("");
 }
 
 /* ---------- Profil + stats ---------- */
+let joueurCourant = null;
+
+// Brawl Pass Plus : l'API officielle ne le donne pas. On lit un champ s'il existe, sinon réglage manuel.
+function lirePass(j) {
+  for (const k of ["brawlPassPlus", "hasBrawlPassPlus", "isBrawlPassPlus", "passPlus"]) {
+    if (typeof j[k] === "boolean") return { val: j[k], auto: true };
+  }
+  if (j.brawlPass && typeof j.brawlPass.plus === "boolean") return { val: j.brawlPass.plus, auto: true };
+  let v = false;
+  try { v = localStorage.getItem("passPlus") === "1"; } catch (e) {}
+  return { val: v, auto: false };
+}
+
 function afficherProfil(j) {
-  const icone = j.icon ? imgIcone(j.icon.id) : "";
+  joueurCourant = j;
+  const icone = j.icon ? imgIcone(j.icon.id) : SYMBOLE;
   const club = j.club && j.club.name ? j.club.name : "Aucun club";
+  const pass = lirePass(j);
   document.getElementById("profil").innerHTML =
-    '<img class="avatar" src="' + icone + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
+    imgTag([icone], "avatar", "") +
     "<div><h1>" + esc(j.name) + '</h1><p class="tag">' + esc(j.tag) + "</p>" +
     '<span class="pastille niveau">Niveau ' + esc(j.expLevel) + "</span>" +
-    '<span class="pastille">🛡️ ' + esc(club) + "</span></div>";
+    '<span class="pastille">🛡️ ' + esc(club) + "</span>" +
+    '<button class="pastille pass' + (pass.val ? " on" : "") + '" id="btn-pass" title="' +
+      (pass.auto ? "Donnée fournie par l\\'API" : "Non fourni par l\\'API : touche pour régler (à refaire à chaque saison)") + '">' +
+      persoHtml("icon_brawl_pass_plus.png", "ico-pass", "Brawl Pass Plus") +
+      "Brawl Pass Plus : <b>" + (pass.val ? "Oui" : "Non") + "</b>" + (pass.auto ? "" : " <small>(manuel)</small>") + "</button></div>";
 }
 
 function afficherStats(j) {
@@ -615,20 +757,14 @@ function afficherGroupes() {
     '<div class="grille">' + trierParRarete(tous).map(carteHtml).join("") + "</div>";
 }
 
-function roleHtml(b) {
-  return b.classe ? '<div class="role">' + esc(b.classe) + "</div>" : "";
-}
-
 function carteHtml(b) {
-  const img = '<div class="rond"><img src="' + imgBrawler(b.id) + '" alt="" loading="lazy" onerror="this.style.opacity=.2"></div>';
+  const img = '<div class="rond">' + imgTag([imgBrawler(b.id)], "", "") + '</div><span class="rar">' + iconeRarete(b, "") + "</span>";
   if (!b.possede) {
     return '<div class="brawler manquant" style="--couleur:' + b.rarete.couleur + '">' + img +
-      '<div class="nom">' + esc(b.nom) + '</div>' + roleHtml(b) + '<div class="etat">🔒 Non possédé</div></div>';
+      '<div class="nom">' + esc(b.nom) + '</div><div class="etat">🔒 Non possédé</div></div>';
   }
   return '<div class="brawler" data-id="' + b.id + '" style="--couleur:' + b.rarete.couleur + '"><span class="puissance">Pouvoir ' + b.puissance + "</span>" + img +
-    '<div class="nom">' + esc(b.nom) + "</div>" + roleHtml(b) +
-    '<div class="troph">🏆 ' + fmt(b.trophees) + "</div>" +
-    '<div class="info">Record ' + fmt(b.record) + "</div>" +
+    '<div class="nom">' + esc(b.nom) + "</div>" +
     '<div class="equip">' +
       '<span title="Pouvoirs stellaires">' + ICONES.starPower + b.starPowers.length + (b.max.starPowers ? "/" + b.max.starPowers : "") + "</span>" +
       '<span title="Gadgets">' + ICONES.gadget + b.gadgets.length + (b.max.gadgets ? "/" + b.max.gadgets : "") + "</span>" +
@@ -641,7 +777,7 @@ function afficherCatalogue() {
   document.getElementById("catalogue").innerHTML = '<div class="grille-cat">' + trierParRarete(tous).map(b => {
     const sous = esc(b.classe || (b.possede ? "Possédé" : "Non possédé"));
     return '<div class="tuile-cat' + (b.possede ? "" : " absent") + '" data-id="' + b.id + '" style="--couleur:' + b.rarete.couleur + '">' +
-      '<div class="vitrine"><img src="' + imgModele(b.id) + '" alt="" loading="lazy" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
+      '<div class="vitrine">' + imgTag([imgModele(b.id), imgBrawler(b.id)], "", "") + "</div>" +
       '<div class="nom">' + esc(b.nom) + '</div><div class="sous">' + sous + "</div></div>";
   }).join("") + "</div>";
 }
@@ -656,11 +792,12 @@ function objetsHtml(liste, possedes, urlImg, urlSecours, emoji, vide) {
 }
 
 /* ---------- Lignes harmonisées : icône + nom, valeur Oui / Non ---------- */
-function miniImg(urls, emoji) {
-  if (!urls.length) return '<span class="mini-e">' + emoji + "</span>";
-  return '<img class="mini" src="' + urls[0] + '"' +
-    (urls.length > 1 ? " data-c='" + JSON.stringify(urls.slice(1)) + "'" : "") +
-    ' data-e="' + emoji + '" alt="" onerror="chaine(this)">';
+function miniImg(urls) {
+  return imgTag(urls, "mini", "");
+}
+
+function ligneTexte(iconeHtml, texte, valeurHtml) {
+  return '<div class="ligne"><span class="gauche">' + iconeHtml + "<span>" + texte + "</span></span><b>" + valeurHtml + "</b></div>";
 }
 
 function ligneIcone(iconeHtml, texte, possede) {
@@ -682,32 +819,30 @@ function ouvrirDetail(id) {
     '<div class="col-gauche">' +
       '<button class="retour" id="btn-retour" title="Retour">←</button>' +
       "<h1>" + esc(b.nom) + "</h1>" +
-      '<div class="bandeau-grand">' + b.rarete.nom + "</div>" +
+      '<div class="bandeau-grand">' + iconeRarete(b, "") + "<span>" + esc(b.rarete.nom) + "</span></div>" +
     "</div>" +
     // milieu
     '<div class="col-milieu">' +
-      '<div class="modele" id="modele"><img src="' + imgModele(b.id) + '" alt="" onerror="this.onerror=null;this.src=\'' + imgBrawler(b.id) + '\'"></div>' +
+      '<div class="modele" id="modele">' + imgTag([imgModele(b.id), imgBrawler(b.id)], "", b.nom) + "</div>" +
     "</div>" +
     // droite
     '<div class="col-droite">' +
       "<h3>Caractéristiques</h3>" +
-      '<div class="ligne"><span>Rareté</span><b>' + esc(b.rarete.nom) + "</b></div>" +
+      ligneTexte(iconeRarete(b, "mini"), "Rareté", esc(b.rarete.nom)) +
       (b.classe ? '<div class="ligne"><span>Rôle</span><b>' + esc(b.classe) + "</b></div>" : "") +
       (b.description ? '<p class="desc">' + esc(b.description) + "</p>" : "") +
-      '<div class="ligne"><span>❤️ PV</span><b>' + (STATS[b.id] && STATS[b.id].pv != null ? fmt(STATS[b.id].pv) : "—") + "</b></div>" +
-      '<div class="ligne"><span>💥 Dégâts</span><b>' + (STATS[b.id] && STATS[b.id].degats != null ? fmt(STATS[b.id].degats) : "—") + "</b></div>" +
       (b.possede
         ? '<div class="ligne"><span>Pouvoir</span><b>' + b.puissance + "</b></div>" +
           '<div class="ligne"><span>Trophées</span><b>' + fmt(b.trophees) + "</b></div>" +
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
           '<div class="ligne"><span>' + ICONES.prestige + ' Prestige actuel</span><b>' + (b.prestige || "—") + "</b></div>"
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
-      "<h3>🔥 Hypercharge</h3>" +
-      ligneIcone(miniImg(IMG_HYPERCHARGE ? [IMG_HYPERCHARGE] : [], "🔥"), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
-      "<h3>✨ Buffies</h3>" +
-      ligneIcone(miniImg([], ICONES.buffieGadget), "Buffie gadget", buf.gadget) +
-      ligneIcone(miniImg([], ICONES.buffieStarPower), "Buffie pouvoir stellaire", buf.starPower) +
-      ligneIcone(miniImg([], ICONES.buffieHyperCharge), "Buffie hypercharge", buf.hyperCharge) +
+      "<h3>Hypercharge</h3>" +
+      ligneIcone(persoHtml("Empty-Hypercharge.webp", "mini", ""), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
+      "<h3>Buffies</h3>" +
+      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-g", ""), "Buffie gadget", buf.gadget) +
+      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
+      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-h", ""), "Buffie hypercharge", buf.hyperCharge) +
       "<h3>🔧 Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
         objetsHtml(c.gadgets, b.gadgets, imgGadget, imgGadgetBord, ICONES.gadget, "Aucun gadget") +
       "<h3>⭐ Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
@@ -735,8 +870,9 @@ function montrer(vue) {
 
 /* ---------- Événements ---------- */
 document.getElementById("onglets").addEventListener("click", e => {
-  const o = e.target.dataset.onglet;
-  if (!o) return;
+  const bt = e.target.closest("button[data-onglet]");
+  if (!bt) return;
+  const o = bt.dataset.onglet;
   if (o === "catalogue") afficherCatalogue();
   montrer(o);
 });
@@ -751,6 +887,13 @@ document.getElementById("catalogue").addEventListener("click", e => {
 document.getElementById("banniere").addEventListener("click", e => {
   const i = e.target.closest(".cell.possede");
   if (i) ouvrirDetail(i.dataset.id);
+});
+document.getElementById("profil").addEventListener("click", e => {
+  if (!e.target.closest("#btn-pass") || !joueurCourant) return;
+  const pass = lirePass(joueurCourant);
+  if (pass.auto) return;
+  try { localStorage.setItem("passPlus", pass.val ? "0" : "1"); } catch (x) {}
+  afficherProfil(joueurCourant);
 });
 document.getElementById("detail").addEventListener("click", e => {
   if (e.target.id === "btn-retour") montrer(ongletPrecedent);
