@@ -150,6 +150,14 @@ h2 { margin: 0; font-size: 1.3rem; }
 .tuile-cat .sous { color: var(--discret); font-size: .75rem; padding: 2px 4px 8px; }
 
 /* ---------- Détail ---------- */
+.btn-lien { cursor:pointer; border:0; border-radius:10px; padding:10px 14px; background:#f5c400; color:#222; font-weight:800; font:inherit; font-weight:800; }
+.mode-bloc { margin-top:14px; }
+.mode-tete { display:flex; align-items:center; gap:8px; font-weight:800; margin-bottom:8px; }
+.mode-tete img { width:32px; height:32px; object-fit:contain; }
+.cartes-grille { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+.carte-map { background:rgba(0,0,0,.25); border-radius:10px; padding:8px; text-align:center; font-size:.85rem; }
+.carte-map img { width:100%; aspect-ratio:1/1; object-fit:contain; border-radius:6px; }
+.carte-map small { display:block; opacity:.7; margin-top:2px; }
 .lien-boutique { display:inline-block; margin-top:8px; padding:12px 18px; border-radius:10px; background:#f5c400; color:#222; font-weight:800; text-decoration:none; }
 .lien-boutique:hover { filter:brightness(1.08); }
 .retour {
@@ -316,6 +324,15 @@ pre { white-space: pre-wrap; word-break: break-all; }
         <p class="note cache" id="info-rarete"></p>
         <div id="vue-liste"><div id="groupes"></div></div>
         <div id="vue-catalogue" class="cache"><div id="catalogue"></div></div>
+      </section>
+
+      <!-- Cartes actuelles -->
+      <section class="carte" id="cartes">
+        <div class="entete-brawlers">
+          <h2>Rotation des cartes</h2>
+          <button id="btn-cartes" class="btn-lien" type="button">Voir les cartes actuelles</button>
+        </div>
+        <div id="cartes-contenu" class="cache"></div>
       </section>
 
       <!-- 5. Récompense quotidienne -->
@@ -946,6 +963,59 @@ document.getElementById("detail").addEventListener("click", e => {
 
 majBoutonCat();
 charger();
-  </script>
+  
+/* ---------- Rotation des cartes (BrawlAPI / Brawlify) ---------- */
+const URLS_EVENTS = ["https://api.brawlapi.com/v1/events", "https://api.brawlify.com/v1/events"];
+const imgMode = id => "https://cdn.brawlify.com/game-modes/regular/" + id + ".png";
+const imgCarte = id => "https://cdn.brawlify.com/maps/regular/" + id + ".png";
+let cartesCharge = false;
+
+function tempsRestant(fin) {
+  const t = new Date(fin).getTime() - Date.now();
+  if (!isFinite(t) || t <= 0) return "";
+  const h = Math.floor(t / 3600000), m = Math.floor(t % 3600000 / 60000);
+  return "Fin dans " + (h ? h + " h " : "") + m + " min";
+}
+
+async function chargerCartes() {
+  const zone = document.getElementById("cartes-contenu");
+  zone.innerHTML = '<p class="note">Chargement…</p>';
+  let data = null;
+  for (const u of URLS_EVENTS) {
+    try { const r = await fetch(u); if (r.ok) { data = await r.json(); break; } } catch (e) {}
+  }
+  const liste = data && (data.active || data);
+  if (!Array.isArray(liste) || !liste.length) {
+    zone.innerHTML = '<p class="note">Impossible de charger la rotation pour le moment.</p>';
+    return;
+  }
+  const modes = {};
+  liste.forEach(e => {
+    const m = e.map || e.event || {};
+    const gm = m.gameMode || {};
+    const modeId = gm.id != null ? gm.id : m.mode;
+    const cle = (gm.name || m.mode || "Mode") + "|" + modeId;
+    (modes[cle] = modes[cle] || { nom: gm.name || String(m.mode || "Mode"), id: modeId, cartes: [] })
+      .cartes.push({ id: m.id, nom: m.name || "", fin: e.endTime });
+  });
+  zone.innerHTML = Object.values(modes).map(g =>
+    '<div class="mode-bloc"><div class="mode-tete">' +
+      (g.id != null ? '<img src="' + imgMode(g.id) + '" alt="" onerror="this.style.display=\'none\'">' : "") +
+      "<span>" + esc(g.nom) + "</span></div>" +
+    '<div class="cartes-grille">' + g.cartes.map(c =>
+      '<div class="carte-map">' +
+        (c.id != null ? '<img src="' + imgCarte(c.id) + '" alt="" onerror="this.style.display=\'none\'">' : "") +
+        "<div>" + esc(c.nom) + "</div><small>" + esc(tempsRestant(c.fin)) + "</small></div>").join("") +
+    "</div></div>").join("");
+}
+
+document.getElementById("btn-cartes").addEventListener("click", () => {
+  const zone = document.getElementById("cartes-contenu");
+  const ouvert = !zone.classList.contains("cache");
+  zone.classList.toggle("cache", ouvert);
+  document.getElementById("btn-cartes").textContent = ouvert ? "Voir les cartes actuelles" : "Masquer les cartes";
+  if (!ouvert && !cartesCharge) { cartesCharge = true; chargerCartes(); }
+});
+</script>
 </body>
 </html>
