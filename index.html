@@ -261,6 +261,7 @@ pre { white-space: pre-wrap; word-break: break-all; }
 .ico { height: 1.15em; width: auto; vertical-align: middle; }
 .prestige-img { display: block; margin-top: 12px; border-radius: 12px; }
 .ligne .gauche { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ligne .skin-mini { width: 44px; height: 44px; border-radius: 8px; }
 .ligne .mini { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
 .ligne .mini-e, .ligne .pas-img { font-size: 1.3rem; width: 28px; height: 28px; text-align: center; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .ligne.non .gauche { opacity: .45; }
@@ -814,11 +815,26 @@ function slugBm(n) {
   return String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
+function imgSkinBm(brawler, skin) {
+  const b = slugBm(brawler), k = slugBm(skin);
+  const liste = [BM + "Skins/" + b + "/brawl-stars-" + k + "-skin.webp"];
+  if (k.indexOf(b) < 0) liste.push(BM + "Skins/" + b + "/brawl-stars-" + k + "-" + b + "-skin.webp");
+  return liste;
+}
 const imgHyperBm = n => BM + "Hypercharges/brawl-stars-" + slugBm(n) + "-hypercharge-icon.webp";
 const imgBuffieBm = (n, t) => BM + "Misc/brawl-stars-" + slugBm(n) + "-" + t + "-buffie-icon.webp";
 function imgBrawlerBm(urlBm, generique, cls, alt, extra) {
   return imgTag([urlBm].concat(extra || [], [imgPerso(generique), imgPersoRaw(generique)]), cls, alt);
 }
+
+// Skin : essaie les adresses suivantes, puis cache l'image (pas de symbole générique)
+function skinErr(el) {
+  let l = [];
+  try { l = JSON.parse(el.dataset.c || "[]"); } catch (e) {}
+  if (l.length) { const x = l.shift(); el.dataset.c = JSON.stringify(l); el.src = x; return; }
+  el.style.display = "none";
+}
+window.skinErr = skinErr;
 
 function ligneTexte(iconeHtml, texte, valeurHtml) {
   return '<div class="ligne"><span class="gauche">' + iconeHtml + "<span>" + texte + "</span></span><b>" + valeurHtml + "</b></div>";
@@ -860,14 +876,16 @@ function ouvrirDetail(id) {
           '<div class="ligne"><span>Record</span><b>' + fmt(b.record) + "</b></div>" +
           ligneTexte(persoHtml(b.tier.f, "mini", ""), "Prestige", esc(b.tier.nom)) +
           '<div class="ligne"><span>Série de victoires actuelle</span><b>' + (b.serie != null ? b.serie : "—") + "</b></div>" +
-          (b.skinNom ? '<div class="ligne"><span>Skin équipé</span><b>' + esc(b.skinNom) + "</b></div>" : "")
+          (b.skinNom ? '<div class="ligne"><span class="gauche"><img class="mini skin-mini" src="' + imgSkinBm(b.nom, b.skinNom)[0] + '"' +
+            (imgSkinBm(b.nom, b.skinNom).length > 1 ? " data-c='" + JSON.stringify(imgSkinBm(b.nom, b.skinNom).slice(1)) + "'" : "") +
+            ' alt="" onerror="skinErr(this)"><span>Skin équipé</span></span><b>' + esc(b.skinNom) + "</b></div>" : "")
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
       "<h3>Hypercharge</h3>" +
       ligneIcone(imgBrawlerBm(imgHyperBm(b.nom), "Empty-Hypercharge.webp", "mini", ""), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
       "<h3>Buffies</h3>" +
       ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "gadget"), "Icon-Buffie.webp", "mini buf-g", ""), "Buffie gadget", buf.gadget) +
       ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "star"), "Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
-      ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "hyper"), "Icon-Buffie.webp", "mini buf-h", "", [imgHyperBm(b.nom)]), "Buffie hypercharge", buf.hyperCharge) +
+      ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "hyper"), "Icon-Buffie.webp", "mini buf-h", ""), "Buffie hypercharge", buf.hyperCharge) +
       "<h3>" + ICONES.gadget + " Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
         objetsHtml(c.gadgets, b.gadgets, imgGadgetBord, imgGadget, BASE_OBJETS.gadget, "Aucun gadget") +
       "<h3>" + ICONES.starPower + " Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
