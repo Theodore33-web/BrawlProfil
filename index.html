@@ -808,6 +808,18 @@ function statsLignes(b) {
   return h;
 }
 
+/* ---------- Images par brawler (site tiers brawlmetrics.gg, adresses non vérifiées → repli sur les icônes génériques) ---------- */
+const BM = "https://brawlmetrics.gg/";
+function slugBm(n) {
+  return String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+const imgHyperBm = n => BM + "Hypercharges/brawl-stars-" + slugBm(n) + "-hypercharge-icon.webp";
+const imgBuffieBm = (n, t) => BM + "Misc/brawl-stars-" + slugBm(n) + "-" + t + "-buffie-icon.webp";
+function imgBrawlerBm(urlBm, generique, cls, alt, extra) {
+  return imgTag([urlBm].concat(extra || [], [imgPerso(generique), imgPersoRaw(generique)]), cls, alt);
+}
+
 function ligneTexte(iconeHtml, texte, valeurHtml) {
   return '<div class="ligne"><span class="gauche">' + iconeHtml + "<span>" + texte + "</span></span><b>" + valeurHtml + "</b></div>";
 }
@@ -851,11 +863,11 @@ function ouvrirDetail(id) {
           (b.skinNom ? '<div class="ligne"><span>Skin équipé</span><b>' + esc(b.skinNom) + "</b></div>" : "")
         : '<div class="ligne"><span>Statut</span><b>Non possédé</b></div>') +
       "<h3>Hypercharge</h3>" +
-      ligneIcone(persoHtml("Empty-Hypercharge.webp", "mini", ""), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
+      ligneIcone(imgBrawlerBm(imgHyperBm(b.nom), "Empty-Hypercharge.webp", "mini", ""), "Hypercharge" + (hyperNom ? " (" + hyperNom + ")" : ""), b.hyper) +
       "<h3>Buffies</h3>" +
-      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-g", ""), "Buffie gadget", buf.gadget) +
-      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
-      ligneIcone(persoHtml("Icon-Buffie.webp", "mini buf-h", ""), "Buffie hypercharge", buf.hyperCharge) +
+      ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "gadget"), "Icon-Buffie.webp", "mini buf-g", ""), "Buffie gadget", buf.gadget) +
+      ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "star"), "Icon-Buffie.webp", "mini buf-s", ""), "Buffie pouvoir stellaire", buf.starPower) +
+      ligneIcone(imgBrawlerBm(imgBuffieBm(b.nom, "hyper"), "Icon-Buffie.webp", "mini buf-h", "", [imgHyperBm(b.nom)]), "Buffie hypercharge", buf.hyperCharge) +
       "<h3>" + ICONES.gadget + " Gadgets " + b.gadgets.length + (b.max.gadgets ? " / " + b.max.gadgets : "") + "</h3>" +
         objetsHtml(c.gadgets, b.gadgets, imgGadgetBord, imgGadget, BASE_OBJETS.gadget, "Aucun gadget") +
       "<h3>" + ICONES.starPower + " Pouvoirs stellaires " + b.starPowers.length + (b.max.starPowers ? " / " + b.max.starPowers : "") + "</h3>" +
